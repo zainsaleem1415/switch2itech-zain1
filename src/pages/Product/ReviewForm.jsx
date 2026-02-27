@@ -1,25 +1,47 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Star } from "lucide-react";
+import { X, Star, Loader2 } from "lucide-react";
+import testimonialService from "../../api/testimonialService";
 
-export function ReviewForm({ open, onOpenChange }) {
+export function ReviewForm({ open, onOpenChange, productName, productId }) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [comment, setComment] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log({ name, role, rating, comment });
+  const [loading, setLoading] = useState(false);
 
-    // Reset form
-    setName("");
-    setRole("");
-    setRating(0);
-    setComment("");
-    onOpenChange(false);
-    alert("Thank you for your review!");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (rating === 0) {
+      alert("Please select a rating.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await testimonialService.createTestimonial({
+        authorNameOverride: name,
+        authorRoleOverride: role,
+        rating: rating,
+        content: comment,
+        product: productId
+      });
+
+      // Reset form
+      setName("");
+      setRole("");
+      setRating(0);
+      setComment("");
+      onOpenChange(false);
+      alert("Thank you for your review!");
+    } catch (error) {
+      console.error("Failed to submit review", error);
+      alert("Failed to submit review. It may require approval or you might need to try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,11 +107,10 @@ export function ReviewForm({ open, onOpenChange }) {
                     className="transition-transform hover:scale-110"
                   >
                     <Star
-                      className={`h-8 w-8 ${
-                        star <= (hoveredRating || rating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
+                      className={`h-8 w-8 ${star <= (hoveredRating || rating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                        }`}
                     />
                   </button>
                 ))}
@@ -117,9 +138,10 @@ export function ReviewForm({ open, onOpenChange }) {
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
-                disabled={rating === 0}
-                className="flex-1 rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                disabled={rating === 0 || loading}
+                className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
+                {loading && <Loader2 size={16} className="animate-spin" />}
                 Submit Review
               </button>
               <Dialog.Close asChild>

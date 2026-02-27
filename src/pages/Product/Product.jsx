@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import productService from "../../api/productService";
 import {
   Search,
   Plus,
@@ -21,16 +21,15 @@ const ProductDashboard = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const API_URL = "http://localhost:5000/api/products";
-
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(API_URL, { withCredentials: true });
+        const response = await productService.getAllProducts();
         // Handling both { status: 'success', data: [...] } and direct array
         const fetchedData = response.data.data || response.data;
         setProducts(Array.isArray(fetchedData) ? fetchedData : []);
       } catch (error) {
+        console.error(error);
         console.error("Error loading products:", error);
       } finally {
         setLoading(false);
@@ -42,10 +41,11 @@ const ProductDashboard = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await axios.delete(`${API_URL}/${id}`, { withCredentials: true });
+        await productService.deleteProduct(id);
         setProducts(products.filter((p) => p._id !== id));
         setSelectedProduct(null);
       } catch (error) {
+        console.error(error);
         alert("Delete failed.");
       }
     }

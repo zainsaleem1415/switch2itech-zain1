@@ -53,7 +53,7 @@ const Revenuepage = () => {
       try {
         const res = await axios.get("http://localhost:5000/api/revenue");
         setTransactions(res.data?.length > 0 ? res.data : MOCK_REVENUE_DATA);
-      } catch (err) {
+      } catch (error) { console.error(error);
         setTransactions(MOCK_REVENUE_DATA);
       }
     };

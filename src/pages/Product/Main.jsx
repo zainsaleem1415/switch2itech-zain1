@@ -25,9 +25,9 @@ export default function App({ product, onBack }) {
     product.image?.length > 0
       ? product.image
       : [
-          product.thumbnail ||
-            "https://images.unsplash.com/photo-1759752394755-1241472b589d?q=80&w=1080",
-        ];
+        product.thumbnail ||
+        "https://images.unsplash.com/photo-1759752394755-1241472b589d?q=80&w=1080",
+      ];
 
   const features = [
     {
@@ -246,6 +246,7 @@ export default function App({ product, onBack }) {
           open={reviewFormOpen}
           onOpenChange={setReviewFormOpen}
           productName={product.name}
+          productId={product._id}
         />
 
         {/* FAQ Section */}

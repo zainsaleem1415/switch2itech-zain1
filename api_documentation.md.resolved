@@ -1,0 +1,109 @@
+# Switch2itech Backend API Documentation
+
+This document outlines the available API endpoints for the Switch2itech backend.
+
+## Base URL
+`http://localhost:5000/api` (or regulated by environment variables)
+
+---
+
+## 🔐 Authentication (`/auth`)
+
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| POST | `/register` | Register a new user | No | - |
+| POST | `/login` | Login and receive HttpOnly cookie | No | - |
+| POST | `/logout` | Logout and clear cookie | No | - |
+| GET | `/me` | Get current authenticated user details | Yes | Any |
+
+---
+
+## 👥 User Management (`/users`)
+
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/` | Get all users (Filter: `?role=`) | Yes | Admin, Manager |
+| GET | `/:id` | Get specific user profile | Yes | Any |
+| PATCH | `/:id` | Update user role | Yes | Admin |
+
+---
+
+## 🏗️ Project Management (`/projects`)
+
+### Projects
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/` | Get all projects | Yes | Any |
+| POST | `/` | Create project (Supports multipart: `coverImage`, `demoVideo`) | Yes | Admin, Manager |
+| GET | `/:id` | Get specific project details | Yes | Any |
+| PATCH | `/:id` | Update project details | Yes | Admin, Manager |
+| DELETE | `/:id` | Delete project | Yes | Admin |
+| PATCH | `/:id/assign` | Assign clients, manager, or team (Body: `{ clients, manager, teamMembers, action }`) | Yes | Admin |
+
+### Milestones
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/:projectId/milestones` | Get all milestones for a project | Yes | Any |
+| POST | `/:projectId/milestones` | Create a new milestone | Yes | Admin, Manager |
+| PATCH | `/:projectId/milestones/:milestoneId` | Update milestone | Yes | Admin, Manager |
+| DELETE | `/:projectId/milestones/:milestoneId` | Delete milestone | Yes | Admin |
+| PATCH | `/:projectId/milestones/:milestoneId/assign` | Assign milestone to user | Yes | Admin, Manager |
+
+### Modules
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/:projectId/milestones/:milestoneId/modules` | Get modules in a milestone | Yes | Any |
+| POST | `/:projectId/milestones/:milestoneId/modules` | Create module | Yes | Admin, Manager |
+| PATCH | `/:projectId/milestones/:milestoneId/modules/:moduleId` | Update module status/details | Yes | Admin, Manager, Developer |
+| PATCH | `/:projectId/milestones/:milestoneId/modules/:moduleId/assign` | Assign module to developer | Yes | Admin, Manager |
+
+### Tasks
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks` | Get tasks in a module | Yes | Any |
+| POST | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks` | Create task | Yes | Any |
+| PATCH | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks/:taskId` | Update task | Yes | Any |
+| DELETE | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks/:taskId` | Delete task | Yes | Admin, Manager |
+| PATCH | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks/:taskId/assign` | Assign task to developer | Yes | Admin, Manager |
+
+### Project FAQs
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| POST | `/:id/faqs` | Add FAQ to project | Yes | Admin, Manager |
+| PATCH | `/:id/faqs/:faqId` | Update FAQ | Yes | Admin, Manager |
+| DELETE | `/:id/faqs/:faqId` | Delete FAQ | Yes | Admin, Manager |
+
+---
+
+## 📦 Product Management (`/products`)
+
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/` | Get all products | No | - |
+| GET | `/:id` | Get specific product | No | - |
+| POST | `/` | Create product (Multipart: `image`, `video`, `thumbnail`) | Yes | Admin |
+| PUT | `/:id` | Update product | Yes | Admin |
+| DELETE | `/:id` | Delete product | Yes | Admin |
+| POST | `/:id/faqs` | Add FAQ | Yes | Admin |
+| PATCH | `/:id/faqs/:faqId` | Update FAQ | Yes | Admin |
+| DELETE | `/:id/faqs/:faqId` | Delete FAQ | Yes | Admin |
+
+---
+
+## 💬 Testimonials (`/testimonials`)
+
+| Method | Endpoint | Description | Auth Required | Role |
+| :--- | :--- | :--- | :--- | :--- |
+| GET | `/` | List testimonials (`?approved=true`, `?project=`, `?product=`) | No | - |
+| GET | `/:id` | Get single testimonial | No | - |
+| POST | `/` | Submit a new testimonial/review | Yes | Any |
+| PATCH | `/:id` | Edit own testimonial or any if admin | Yes | Owner, Admin |
+| PATCH | `/:id/approve` | Approve/feature a testimonial | Yes | Admin |
+| DELETE | `/:id` | Remove testimonial | Yes | Admin |
+
+---
+
+## 🩺 System
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| GET | `/health` | Backend status check | No |

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { 
-  Package, Users, Edit3, Trash2, Plus, 
+import productService from "../../api/productService";
+import {
+  Package, Users, Edit3, Trash2, Plus,
   Search, Filter, MoreVertical, AlertCircle,
   CheckCircle2, RefreshCcw, Download, History,
   ArrowUpRight, BarChart3, ChevronRight
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
+import Addproduct from "../Addproduct/Addproduct";
 
 const MOCK_PRODUCTS = [
   {
@@ -74,11 +75,12 @@ const Productpage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("All");
+  const [currentView, setCurrentView] = useState("list");
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/products");
+        const res = await productService.getAllProducts();
         setProducts(res.data?.length > 0 ? res.data : MOCK_PRODUCTS);
       } catch (err) {
         setProducts(MOCK_PRODUCTS);
@@ -88,6 +90,18 @@ const Productpage = () => {
     };
     fetchProducts();
   }, []);
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        await productService.deleteProduct(id);
+        setProducts(products.filter(p => p._id !== id));
+      } catch (err) {
+        console.error("Failed to delete product:", err);
+        alert("Failed to delete product.");
+      }
+    }
+  };
 
   const stats = [
     { label: "Total Assets", value: products.length, trend: "+12%", icon: Package, color: "text-blue-600", bg: "bg-blue-500/10" },
@@ -102,9 +116,26 @@ const Productpage = () => {
     return matchesSearch && matchesTab;
   });
 
+  if (currentView === "add") {
+    return (
+      <div className="min-h-screen bg-background p-6 lg:p-10 space-y-6 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex items-center justify-between border-b pb-6">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">Create Hardware / Software Asset</h1>
+            <p className="text-muted-foreground">Provision a new product entry to the catalog ecosystem.</p>
+          </div>
+          <Button variant="outline" onClick={() => { setCurrentView("list"); fetchProducts(); }} className="gap-2 rounded-xl">
+            <ChevronRight className="rotate-180" size={16} /> Cancel & Return
+          </Button>
+        </div>
+        <Addproduct />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 lg:p-10 space-y-8 bg-background min-h-screen max-w-[1600px] mx-auto animate-in fade-in duration-700">
-      
+
       {/* SECTION: BREADCRUMBS & HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b pb-8">
         <div className="space-y-2">
@@ -120,7 +151,7 @@ const Productpage = () => {
           <Button variant="outline" className="h-11 rounded-xl gap-2 font-semibold">
             <Download size={18} /> Export CSV
           </Button>
-          <Button className="h-11 px-8 rounded-xl font-bold gap-2 shadow-xl shadow-primary/20">
+          <Button onClick={() => setCurrentView("add")} className="h-11 px-8 rounded-xl font-bold gap-2 shadow-xl shadow-primary/20">
             <Plus size={18} /> Create Product
           </Button>
         </div>
@@ -155,31 +186,30 @@ const Productpage = () => {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    activeTab === tab ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === tab ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   {tab}
                 </button>
               ))}
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="relative w-full md:w-80 group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={16} />
-                <Input 
-                  placeholder="Search by SKU or Name..." 
+                <Input
+                  placeholder="Search by SKU or Name..."
                   className="pl-9 h-11 rounded-xl bg-muted/50 focus:bg-background transition-all"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl"><Filter size={18}/></Button>
-              <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl"><History size={18}/></Button>
+              <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl"><Filter size={18} /></Button>
+              <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl"><History size={18} /></Button>
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -218,9 +248,9 @@ const Productpage = () => {
                           <span className={product.stock < 10 ? 'text-rose-500' : 'text-emerald-500'}>{product.stock} Units</span>
                         </div>
                         <div className="w-24 bg-muted rounded-full h-1.5 overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-1000 ${product.stock < 10 ? 'bg-rose-500' : 'bg-emerald-500'}`} 
-                            style={{ width: `${Math.min(product.stock, 100)}%` }} 
+                          <div
+                            className={`h-full transition-all duration-1000 ${product.stock < 10 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${Math.min(product.stock, 100)}%` }}
                           />
                         </div>
                       </div>
@@ -236,7 +266,7 @@ const Productpage = () => {
                         <Button variant="ghost" size="icon" className="h-9 w-9 text-blue-500 hover:bg-blue-500/10 rounded-lg">
                           <Edit3 size={18} />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 text-rose-500 hover:bg-rose-500/10 rounded-lg">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 text-rose-500 hover:bg-rose-500/10 rounded-lg" onClick={() => handleDelete(product._id)}>
                           <Trash2 size={18} />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
@@ -249,7 +279,7 @@ const Productpage = () => {
               </tbody>
             </table>
           </div>
-          
+
           {/* FOOTER: PAGINATION PLACEHOLDER */}
           <div className="p-5 border-t border-border/50 flex items-center justify-between bg-muted/10">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">

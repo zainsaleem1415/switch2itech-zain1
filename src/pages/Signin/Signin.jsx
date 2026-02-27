@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { Lock, Mail, ChevronRight, UserPlus, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import authService from "../../api/authService";
+import { useAuth } from "../../context/ContextProvider";
 
 const Signin = () => {
   const navigate = useNavigate();
+  const { setAuthenticated, setUser, setRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -19,15 +21,19 @@ const Signin = () => {
     setError("");
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        formData,
-        { withCredentials: true } // Crucial for receiving the HttpOnly cookie
-      );
+      const response = await authService.login(formData);
 
-      if (response.data.status === "success") {
-        // Save user data/token to localStorage for quick access
-        localStorage.setItem("user", JSON.stringify(response.data.data));
+      if (response.data.status === "success" || response.data.user) {
+        // Find user data
+        const userData = response.data.data?.user || response.data.data || response.data.user;
+
+        // Update global context
+        setUser(userData);
+        setRole(userData?.role || 'user');
+        setAuthenticated(true);
+
+        // Save fallback to localStorage
+        localStorage.setItem("user", JSON.stringify(userData));
         navigate("/");
       }
     } catch (err) {

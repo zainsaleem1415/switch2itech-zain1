@@ -4,24 +4,15 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTheme } from './ThemeContext'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '../ui/dialog'
-import Addproject from '../../pages/Addproject/Addproject'
-import Addclients from '../../pages/Addclients/Addclients'
 
 const Navbar = () => {
   const { darkMode, toggleTheme } = useTheme()
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  
+
   const location = useLocation()
   const navigate = useNavigate()
   const searchRef = useRef(null)
@@ -55,9 +46,9 @@ const Navbar = () => {
   const handleInputChange = (e) => {
     const value = e.target.value
     setSearchQuery(value)
-    
+
     if (value.trim().length > 0) {
-      const filtered = pages.filter(page => 
+      const filtered = pages.filter(page =>
         page.name.toLowerCase().includes(value.toLowerCase())
       )
       setSuggestions(filtered)
@@ -79,34 +70,6 @@ const Navbar = () => {
       handleSuggestionClick(suggestions[0].path)
     }
   }
-
-  const getButtonConfig = () => {
-    switch (currentPath) {
-      case 'projects': return { label: 'New Project', icon: <Plus size={16} /> }
-      case 'clients': return { label: 'Add Client', icon: <UserPlus size={16} /> }
-      case 'analytics': return { label: 'Add Report', icon: <BarChart size={16} /> }
-      case 'testimonials': return { label: 'Add Testimonial', icon: <MessageSquarePlus size={16} /> }
-      default: return { label: 'New Action', icon: <Plus size={16} /> }
-    }
-  }
-
-  const renderModalContent = () => {
-    switch (currentPath) {
-      case 'projects': return <Addproject />
-      case 'clients': return <Addclients />
-      default: return <div className="text-center py-10 text-foreground">Coming Soon...</div>
-    }
-  }
-
-  const getModalTitle = () => {
-    switch (currentPath) {
-      case 'projects': return 'New Project'
-      case 'clients': return 'Add Client'
-      default: return 'New Action'
-    }
-  }
-
-  const buttonConfig = getButtonConfig()
 
   return (
     <>
@@ -185,9 +148,9 @@ const Navbar = () => {
             </div>
 
             <div className="relative">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   setShowCalendar(!showCalendar)
                   setShowNotifications(false)
@@ -205,7 +168,7 @@ const Navbar = () => {
                       <h3 className="font-bold text-sm text-foreground">Schedule</h3>
                       <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Today</span>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div className="p-3 bg-secondary/30 rounded-xl border border-border/50">
                         <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Upcoming Task</p>
@@ -219,7 +182,7 @@ const Navbar = () => {
                       <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-muted-foreground/60 pb-2 border-b border-border/50">
                         <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
                       </div>
-                      
+
                       <div className="grid grid-cols-7 gap-1 text-center">
                         {[...Array(31)].slice(0, 14).map((_, i) => (
                           <div key={i} className={`py-1.5 text-[10px] rounded-lg transition-colors cursor-pointer ${i === 6 ? 'bg-primary text-primary-foreground font-bold' : 'text-foreground hover:bg-secondary'}`}>
@@ -246,27 +209,8 @@ const Navbar = () => {
               {darkMode ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
           </div>
-
-          <div className="h-8 w-px bg-border" />
-
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-primary/20 active:scale-95"
-          >
-            {buttonConfig.icon}
-            {buttonConfig.label}
-          </Button>
         </div>
       </header>
-
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="no-scrollbar">
-          <DialogHeader>
-            <DialogTitle>{getModalTitle()}</DialogTitle>
-          </DialogHeader>
-          {renderModalContent()}
-        </DialogContent>
-      </Dialog>
     </>
   )
 }

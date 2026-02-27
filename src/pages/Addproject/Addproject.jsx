@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import projectService from "../../api/projectService";
 import {
   Send,
   Layout,
@@ -71,8 +71,14 @@ const Addproject = () => {
     // Append standard fields
     Object.keys(project).forEach((key) => {
       if (key === "tags") {
-        const tagArray = project.tags.split(",").map((tag) => tag.trim());
-        tagArray.forEach((tag) => formData.append("tags[]", tag));
+        if (project.tags) {
+          const tagArray = project.tags.split(",").map((tag) => tag.trim()).filter(Boolean);
+          tagArray.forEach((tag) => formData.append("tags[]", tag));
+        }
+      } else if (key === "startDate" || key === "endDate") {
+        if (project[key]) {
+          formData.append(key, new Date(project[key]).toISOString());
+        }
       } else {
         formData.append(key, project[key]);
       }
@@ -83,17 +89,13 @@ const Addproject = () => {
     if (demoVideo) formData.append("demoVideo", demoVideo);
 
     // Append FAQs as a stringified array (Backend needs to JSON.parse this)
-    formData.append("faqs", JSON.stringify(faqs));
+    const validFaqs = faqs.filter(f => f.question && f.answer);
+    if (validFaqs.length > 0) {
+      formData.append("faqs", JSON.stringify(validFaqs));
+    }
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/projects",
-        formData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      const response = await projectService.createProject(formData);
 
       if (response.data.status === "success") {
         setStatus({

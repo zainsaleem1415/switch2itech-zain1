@@ -1,0 +1,155 @@
+# Frontend API Schema Documentation (POST / Create Payloads)
+
+This document provides a complete guide for the frontend team on what data structures and fields are expected when submitting (`POST`) creation requests to the backend API for various entities.
+
+> [!NOTE]
+> - **Required Fields** must be included in the request body for the entity to be created successfully. Failure to do so will result in Mongoose validation errors.
+> - **Optional Fields** can be omitted. Provide them if you have the data or want to override the default values.
+> - **ObjectId** refers to the `_id` string of a related document (e.g., `"65abcd1234ef..."`).
+
+---
+
+## 1. User
+When creating or registering a new user.
+
+### Payload Structure
+| Field | Type | Required | Default | Notes / Enum Values |
+| --- | --- | :---: | --- | --- |
+| `name` | String | **Yes** | | |
+| `email` | String | **Yes** | | Must be unique, trimmed, and converted to lowercase automatically. |
+| `password` | String | **Yes** | | Automatically hashed by backend. |
+| `profile` | String | No | `""` | URL to a profile picture. |
+| `role` | String | No | `"user"` | Enum: `["user", "admin", "client", "developer", "manager"]` |
+| `phoneNo` | String | No | | |
+| `company` | String | No | | |
+| `address` | String | No | | |
+| `assignedProjects` | Array of ObjectIds | No | `[]` | References to **Project** IDs (used for clients and developers). |
+| `skills` | Array of Strings | No | `[]` | Used to track a developer's tech stack. |
+
+---
+
+## 2. Project
+When creating a new project.
+
+### Payload Structure
+| Field | Type | Required | Default | Notes / Enum Values |
+| --- | --- | :---: | --- | --- |
+| `title` | String | **Yes** | | Automatically trimmed. |
+| `description` | String | No | `""` | |
+| `coverImage` | String | No | | URL to cover image. |
+| `demoVideo` | String | No | | URL to demo video. |
+| `status` | String | No | `"planning"` | Enum: `["planning", "active", "on-hold", "in-review", "completed", "cancelled"]` |
+| `priority` | String | No | `"medium"` | Enum: `["low", "medium", "high", "critical"]` |
+| `clients` | Array of ObjectIds | No | `[]` | References to **User** IDs (for clients). Supports multi-client projects. |
+| `manager` | ObjectId | No | | Reference to **User** ID (for project manager). |
+| `teamMembers` | Array of ObjectIds | No | `[]` | References to **User** IDs (for developers). |
+| `startDate` | Date (String) | No | | |
+| `endDate` | Date (String) | No | | |
+| `budget` | Number | No | `0` | |
+| `currency` | String | No | `"USD"` | |
+| `tags` | Array of Strings | No | `[]` | |
+| `faqs` | Array of Objects | No | `[]` | Structure: `[{ question: String (required), answer: String (required) }]` |
+
+---
+
+## 3. Product
+When creating a new product template or listing.
+
+### Payload Structure
+| Field | Type | Required | Default | Notes / Enum Values |
+| --- | --- | :---: | --- | --- |
+| `name` | String | **Yes** | | |
+| `desc` | String | **Yes** | | |
+| `category` | String | **Yes** | | |
+| `clients` | Array of ObjectIds | No | `[]` | References to **User** IDs (clients who use the product). |
+| `video` | Array of Strings | No | `[]` | Cloudinary Video URLs. |
+| `image` | Array of Strings | No | `[]` | Cloudinary Image URLs. |
+| `thumbnail` | String | No | | Cloudinary Thumbnail URL. |
+| `techStack` | Array of Strings | No | `[]` | |
+| `faqs` | Array of Objects | No | `[]` | Structure: `[{ question: String (required), answer: String (required) }]` |
+
+---
+
+## 4. Milestone
+When creating a milestone for a specific project.
+
+### Payload Structure
+| Field | Type | Required | Default | Notes / Enum Values |
+| --- | --- | :---: | --- | --- |
+| `title` | String | **Yes** | | Automatically trimmed. |
+| `project` | ObjectId | **Yes** | | Reference to the parent **Project** ID. |
+| `description` | String | No | `""` | |
+| `assignedTo` | ObjectId | No | | Reference to **User** ID (manager or lead developer). |
+| `status` | String | No | `"pending"` | Enum: `["pending", "in-progress", "completed", "on-hold"]` |
+| `startDate` | Date (String) | No | | |
+| `dueDate` | Date (String) | No | | |
+| `order` | Number | No | `0` | E.g., Sprint 1 = `1`, Sprint 2 = `2`. Used for display sorting. |
+
+---
+
+## 5. Module
+When creating a module belonging to a milestone.
+
+### Payload Structure
+| Field | Type | Required | Default | Notes / Enum Values |
+| --- | --- | :---: | --- | --- |
+| `name` | String | **Yes** | | Automatically trimmed. |
+| `milestone` | ObjectId | **Yes** | | Reference to parent **Milestone** ID. |
+| `project` | ObjectId | **Yes** | | Reference to **Project** ID. Required for easier querying. |
+| `description` | String | No | `""` | |
+| `status` | String | No | `"pending"` | Enum: `["pending", "in-progress", "in-review", "completed"]` |
+| `assignedTo` | ObjectId | No | | Reference to **User** ID (developer responsible). |
+| `dueDate` | Date (String) | No | | |
+| `order` | Number | No | `0` | Order within the milestone. |
+
+> [!TIP]
+> `completedAt` is omitted from the above list, since it will be auto-set by the backend when the `status` changes to `"completed"`.
+
+---
+
+## 6. Task
+When creating the smallest work unit (task) mapped to a module.
+
+### Payload Structure
+| Field | Type | Required | Default | Notes / Enum Values |
+| --- | --- | :---: | --- | --- |
+| `title` | String | **Yes** | | Automatically trimmed. |
+| `module` | ObjectId | **Yes** | | Reference to parent **Module** ID. |
+| `description` | String | No | `""` | |
+| `milestone` | ObjectId | No | | Reference to **Milestone** ID (for fast lookup). |
+| `project` | ObjectId | No | | Reference to **Project** ID (for fast lookup). |
+| `status` | String | No | `"todo"` | Enum: `["todo", "in-progress", "in-review", "done", "blocked"]` |
+| `priority` | String | No | `"medium"` | Enum: `["low", "medium", "high", "critical"]` |
+| `reporter` | ObjectId | No | | Reference to **User** ID (creator). |
+| `assignee` | ObjectId | No | | Reference to **User** ID (assigned developer). |
+| `dueDate` | Date (String) | No | | |
+| `labels` | Array of Strings | No | `[]` | E.g., `["bug", "feature", "backend"]`. |
+| `estimatedHours` | Number | No | `0` | |
+| `loggedHours` | Number | No | `0` | |
+
+> [!TIP]
+> `completedAt` is auto-set by the backend when `status` is marked as `"done"`.
+
+---
+
+## 7. Testimonial
+When submitting a review/testimonial for a project or product.
+
+### Payload Structure
+| Field | Type | Required | Default | Notes / Enum Values |
+| --- | --- | :---: | --- | --- |
+| `author` | ObjectId | **Yes** | | Reference to **User** ID. |
+| `content` | String | **Yes** | | The main review/testimonial content. |
+| `authorNameOverride` | String | No | | Fallback/Override Name. |
+| `authorRoleOverride` | String | No | | Fallback/Override Role. |
+| `authorCompanyOverride`| String | No | | Fallback/Override Company. |
+| `authorAvatarOverride` | String | No | | Cloudinary Avatar URL fallback. |
+| `title` | String | No | | Headline / Short Title. |
+| `rating` | Number | No | `5` | Min: `1`, Max: `5`. |
+| `project` | ObjectId | No | `null` | Reference to **Project** ID. (Provide either `project` or `product`). |
+| `product` | ObjectId | No | `null` | Reference to **Product** ID. (Provide either `product` or `project`). |
+| `isApproved` | Boolean | No | `false` | Used for moderation. |
+| `isFeatured` | Boolean | No | `false` | Used for featuring on landing page. |
+
+> [!CAUTION]
+> The database enforces unique testimonials. A single underlying `author` can only have one testimonial per `project` or one per `product`. Subsequent creation requests for the same entity will fail unhandled uniqueness validations.

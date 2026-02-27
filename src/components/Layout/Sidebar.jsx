@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react"; // Added useEffect
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import axios from "axios"; // Added axios
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "../ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
@@ -16,34 +15,27 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  Loader2, // Added Loader
+  Loader2,
 } from "lucide-react";
+import { useAuth } from "../../context/ContextProvider";
+import authService from "../../api/authService";
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [user, setUser] = useState(null); // User state
-  const [loading, setLoading] = useState(true); // Loading state
   const navigate = useNavigate();
+  const { user, role, loading, setAuthenticated, setUser, setRole } = useAuth();
 
-  // 1. Fetch Profile Data from Backend
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/auth/me", {
-          withCredentials: true, // Crucial for sending JWT cookies
-        });
-        if (response.data.status === "success") {
-          setUser(response.data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        // Optional: navigate('/login') if unauthorized
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, []);
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      setAuthenticated(false);
+      setUser(null);
+      setRole(null);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
 
   // Helper: Get Initials for Fallback
   const getInitials = (name) => {
@@ -55,26 +47,28 @@ const Sidebar = () => {
       .toUpperCase();
   };
 
+  // Only show menu items allowed for the current role
   const mainMenu = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-    { icon: Briefcase, label: "Projects", path: "/projects" },
-    { icon: Users, label: "Clients", path: "/clients" },
-    { icon: BarChart3, label: "Analytics", path: "/analytics" },
-    { icon: MessageSquare, label: "Testimonials", path: "/testimonials" },
-    { icon: Package, label: "Products", path: "/products" },
-  ];
+    { icon: LayoutDashboard, label: "Dashboard", path: "/", roles: ["admin", "manager", "developer", "client", "user"] },
+    { icon: Briefcase, label: "Projects", path: "/projects", roles: ["admin", "manager", "developer"] },
+    { icon: Users, label: "Clients", path: "/clients", roles: ["admin", "manager"] },
+    { icon: BarChart3, label: "Analytics", path: "/analytics", roles: ["admin"] },
+    { icon: MessageSquare, label: "Testimonials", path: "/testimonials", roles: ["admin", "manager", "developer", "client", "user"] },
+    { icon: Package, label: "Products", path: "/products", roles: ["admin", "manager", "developer", "client", "user"] },
+  ].filter(item => item.roles.includes(role || "user"));
 
-  const systemMenu = [{ icon: LifeBuoy, label: "Support", path: "/support" }];
+  const systemMenu = [
+    { icon: LifeBuoy, label: "Support", path: "/support" }
+  ];
 
   const NavItem = ({ item }) => (
     <NavLink
       to={item.path}
       end={item.path === "/"}
       className={({ isActive }) =>
-        `relative w-full flex items-center px-3.5 py-2.5 rounded-xl transition-all duration-300 group ${
-          isActive
-            ? "text-indigo-500 bg-indigo-500/10"
-            : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+        `relative w-full flex items-center px-3.5 py-2.5 rounded-xl transition-all duration-300 group ${isActive
+          ? "text-indigo-500 bg-indigo-500/10"
+          : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
         } ${isCollapsed ? "justify-center" : "space-x-3"}`
       }
     >
@@ -110,9 +104,8 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`h-screen flex flex-col border-r bg-card border-border shrink-0 transition-all duration-300 ease-in-out z-50 ${
-        isCollapsed ? "w-20" : "w-72"
-      }`}
+      className={`h-screen flex flex-col border-r bg-card border-border shrink-0 transition-all duration-300 ease-in-out z-50 ${isCollapsed ? "w-20" : "w-72"
+        }`}
     >
       {/* Header / Logo */}
       <div
@@ -199,10 +192,9 @@ const Sidebar = () => {
             <NavLink
               to="/profile"
               className={({ isActive }) =>
-                `flex flex-1 items-center gap-3 p-2 rounded-2xl transition-all duration-300 overflow-hidden ${
-                  isActive
-                    ? "bg-indigo-500/10 border-indigo-500/20 border"
-                    : "bg-secondary/30 hover:bg-secondary/50 border border-transparent"
+                `flex flex-1 items-center gap-3 p-2 rounded-2xl transition-all duration-300 overflow-hidden ${isActive
+                  ? "bg-indigo-500/10 border-indigo-500/20 border"
+                  : "bg-secondary/30 hover:bg-secondary/50 border border-transparent"
                 } ${isCollapsed ? "justify-center" : ""}`
               }
             >
@@ -229,7 +221,7 @@ const Sidebar = () => {
                     {user?.name || "Unknown User"}
                   </p>
                   <p className="text-[10px] font-black uppercase tracking-tighter text-indigo-500 truncate leading-none mt-0.5">
-                    {user?.role || "Guest"}
+                    {role || "Guest"}
                   </p>
                 </motion.div>
               )}
@@ -237,12 +229,12 @@ const Sidebar = () => {
           )}
 
           {!isCollapsed && (
-            <NavLink
-              to="/login"
+            <button
+              onClick={handleLogout}
               className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-colors shrink-0"
             >
               <LogOut size={16} />
-            </NavLink>
+            </button>
           )}
         </div>
       </div>

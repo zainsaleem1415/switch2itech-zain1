@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import userService from "../../api/userService";
 import {
   MoreVertical,
   Phone,
@@ -30,9 +30,7 @@ const Main = () => {
       try {
         setLoading(true);
         // Adjust endpoint if you have a specific /api/users/clients route
-        const response = await axios.get("http://localhost:5000/api/users", {
-          withCredentials: true,
-        });
+        const response = await userService.getUsers();
 
         if (response.data.status === "success") {
           // Filter only users with the role 'client'

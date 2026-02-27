@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { 
-  Users, UserCheck, UserPlus, Search, 
-  Trash2, Edit, MessageSquare, Shield, 
-  MoreHorizontal, Mail, MapPin, Star,
-  CheckCircle2, XCircle, Filter, Download
+import userService from "../../api/userService";
+import {
+  Users, UserCheck, UserPlus, Search,
+  Trash2, Edit, Shield, Mail, CheckCircle2, XCircle, Download, Check
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
+
+const ROLES = ["user", "admin", "client", "developer", "manager"];
 
 const MOCK_USERS = [
   {
@@ -47,48 +47,65 @@ const MOCK_USERS = [
   }
 ];
 
-const Clientspage = () => {
+const Userspage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingRole, setEditingRole] = useState(null); // stores user id currently being edited
+  const [newRole, setNewRole] = useState("");
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await userService.getUsers();
+      setUsers(res.data?.data?.length >= 0 ? res.data.data : MOCK_USERS);
+    } catch (err) {
+      console.error(err);
+      setUsers(MOCK_USERS);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/users");
-        setUsers(res.data?.length > 0 ? res.data : MOCK_USERS);
-      } catch (err) {
-        setUsers(MOCK_USERS);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
 
+  const handleRoleUpdate = async (userId) => {
+    try {
+      await userService.updateUserRole(userId, newRole);
+      // Update local state
+      setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
+      setEditingRole(null);
+    } catch (error) {
+      console.error("Failed to update user role:", error);
+      alert("Failed to update user role.");
+    }
+  };
+
   const stats = [
     { label: "Total Accounts", value: users.length, icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Active Now", value: users.filter(u => u.status === 'Active').length, icon: UserCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { label: "Verified Reviews", value: users.filter(u => u.testimonial).length, icon: MessageSquare, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { label: "Security Alerts", value: "0", icon: Shield, color: "text-rose-500", bg: "bg-rose-500/10" },
+    { label: "Admins", value: users.filter(u => u.role === 'admin').length, icon: Shield, color: "text-rose-500", bg: "bg-rose-500/10" },
+    { label: "Developers", value: users.filter(u => u.role === 'developer').length, icon: UserCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { label: "Clients", value: users.filter(u => u.role === 'client').length, icon: Users, color: "text-amber-500", bg: "bg-amber-500/10" },
   ];
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredUsers = users.filter(u =>
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="p-6 lg:p-10 space-y-8 bg-background min-h-screen animate-in fade-in duration-500">
-      
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Client Relations</h1>
-          <p className="text-muted-foreground font-medium">Manage user identities, access levels, and public testimonials.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">User Management</h1>
+          <p className="text-muted-foreground font-medium">Manage user identities and access levels across the platform.</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" className="rounded-xl gap-2 h-11"><Download size={18} /> Export List</Button>
-          <Button className="rounded-xl gap-2 h-11 shadow-lg shadow-primary/20"><UserPlus size={18} /> Invite Client</Button>
+          <Button className="rounded-xl gap-2 h-11 shadow-lg shadow-primary/20"><UserPlus size={18} /> Invite User</Button>
         </div>
       </div>
 
@@ -109,9 +126,9 @@ const Clientspage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* USER MANAGEMENT SECTION */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-3 space-y-6">
           <Card className="border-border/50 shadow-sm overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b pb-6">
               <div>
@@ -120,8 +137,8 @@ const Clientspage = () => {
               </div>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                <Input 
-                  placeholder="Filter by name/email..." 
+                <Input
+                  placeholder="Filter by name/email..."
                   className="pl-9 h-10 rounded-xl"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -152,19 +169,48 @@ const Clientspage = () => {
                           </div>
                         </td>
                         <td className="p-5">
-                          <span className="text-xs font-semibold text-muted-foreground">{user.role}</span>
+                          <div className="flex flex-col gap-2">
+                            {editingRole === user._id ? (
+                              <div className="flex items-center gap-2">
+                                <select
+                                  className="h-8 rounded-md border bg-background px-2 text-xs"
+                                  value={newRole}
+                                  onChange={(e) => setNewRole(e.target.value)}
+                                >
+                                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                                <Button size="sm" variant="ghost" className="h-8 text-emerald-600 p-2" onClick={() => handleRoleUpdate(user._id)}>
+                                  <Check size={16} />
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-8 text-rose-600 p-2" onClick={() => setEditingRole(null)}>
+                                  <XCircle size={16} />
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className={`text-xs font-semibold px-2 py-1 rounded-full w-fit uppercase ${user.role === 'admin' ? 'bg-rose-500/10 text-rose-600' : 'bg-secondary text-secondary-foreground'}`}>{user.role}</span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-5">
-                          <Badge className={`rounded-lg px-2 text-[10px] uppercase font-bold ${
-                            user.status === 'Active' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
-                          }`}>
-                            {user.status === 'Active' ? <CheckCircle2 size={10} className="mr-1" /> : <XCircle size={10} className="mr-1" />}
-                            {user.status}
+                          <Badge className={`rounded-lg px-2 text-[10px] uppercase font-bold ${user.status === 'inactive' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                            }`}>
+                            {user.status === 'inactive' ? <XCircle size={10} className="mr-1" /> : <CheckCircle2 size={10} className="mr-1" />}
+                            {user.status || 'Active'}
                           </Badge>
                         </td>
                         <td className="p-5 text-right">
                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:bg-blue-50"><Edit size={16} /></Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-blue-500 hover:bg-blue-50"
+                              onClick={() => {
+                                setEditingRole(user._id);
+                                setNewRole(user.role);
+                              }}
+                            >
+                              <Edit size={16} />
+                            </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-50"><Trash2 size={16} /></Button>
                           </div>
                         </td>
@@ -177,45 +223,11 @@ const Clientspage = () => {
           </Card>
         </div>
 
-        {/* TESTIMONIALS MANAGEMENT SECTION */}
-        <div className="space-y-6">
-          <Card className="border-border/50 shadow-sm sticky top-10">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">Public Feedback</CardTitle>
-                  <CardDescription>Verified client testimonials</CardDescription>
-                </div>
-                <Badge variant="outline" className="bg-amber-500/5 text-amber-600 border-amber-500/20"><Star size={12} className="mr-1 fill-amber-600" /> 4.9</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {users.filter(u => u.testimonial).map((u, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-muted/30 border border-border/40 relative group">
-                  <div className="flex items-center gap-3 mb-3">
-                    <img src={u.avatar} className="h-8 w-8 rounded-full" alt="" />
-                    <div className="flex flex-col">
-                      <span className="text-[12px] font-bold">{u.name}</span>
-                      <span className="text-[10px] text-muted-foreground uppercase">{u.role}</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground italic leading-relaxed">"{u.testimonial}"</p>
-                  <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                    <Badge className="text-[9px] bg-primary/10 text-primary border-none">Published</Badge>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                       <Button variant="ghost" className="h-7 text-[10px] font-bold">Unpublish</Button>
-                       <Button variant="ghost" className="h-7 text-[10px] font-bold text-rose-500">Hide</Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+
 
       </div>
     </div>
   );
 };
 
-export default Clientspage;
+export default Userspage;

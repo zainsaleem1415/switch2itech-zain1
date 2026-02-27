@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import authService from "../../api/authService";
 import {
   Mail,
   Phone,
@@ -43,9 +43,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/auth/me", {
-          withCredentials: true,
-        });
+        const response = await authService.getCurrentUser();
         if (response.data.status === "success") {
           setUser(response.data.data);
           console.log(response.data.data)

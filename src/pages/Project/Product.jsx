@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import projectService from "../../api/projectService";
 import { Search, Plus, ExternalLink, Loader2, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
@@ -14,15 +14,11 @@ const ProductDashboard = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const API_URL = "http://localhost:5000/api/projects";
-
   // --- FETCH DATA SECTION ---
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await axios.get(API_URL, {
-          withCredentials: true,
-        });
+        const response = await projectService.getAllProjects();
 
         // Backend response structure: { status: "success", data: [...] }
         if (response.data && response.data.data) {
@@ -31,6 +27,7 @@ const ProductDashboard = () => {
           setProjects(response.data); // Fallback
         }
       } catch (error) {
+        console.error(error);
         console.error("Error loading projects:", error);
         setError("Projects load nahi ho sakay. Server check karein.");
       } finally {
@@ -45,10 +42,11 @@ const ProductDashboard = () => {
       window.confirm("Kya aap waqai is project ko delete karna chahte hain?")
     ) {
       try {
-        await axios.delete(`${API_URL}/${id}`, { withCredentials: true });
+        await projectService.deleteProject(id);
         setProjects(projects.filter((p) => p._id !== id));
         setSelectedProject(null);
       } catch (error) {
+        console.error(error);
         alert("Delete fail ho gaya.");
       }
     }

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   TrendingUp,
   Users,
@@ -24,8 +24,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card'
 import { Button } from '../../components/ui/button'
 import { dummyData } from '../../utility/dumydata'
+import { useAuth } from '../../context/ContextProvider'
+import projectService from '../../api/projectService'
 
-const StatCard = ({ title, value, change, icon: Icon, trend }) => {
+const StatCard = ({ title, value, change, icon: trend }) => {
   const isUp = trend === 'up';
   return (
     <Card className="rounded-3xl border-border shadow-sm hover:shadow-md transition-all duration-300 bg-card">
@@ -49,13 +51,20 @@ const StatCard = ({ title, value, change, icon: Icon, trend }) => {
 }
 
 const Analytics = () => {
+  const { user, role } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({
+    projectsCount: 0,
+    revenue: 0,
+    activeProjects: 0,
+    completedProjects: 0
+  });
+
   const iconMap = {
-    "Page Views": Activity,
-    "Bounce Rate": Zap,
-    "Conversion": TrendingUp,
-    "Active Users": Users,
+    "Total Projects": Briefcase,
+    "Active Projects": Activity,
+    "Completed": TrendingUp,
     "Revenue": DollarSign,
-    "Avg. Session": Activity
   };
 
   const chartData = [
@@ -67,14 +76,64 @@ const Analytics = () => {
     { name: 'Jun', revenue: 5500, projects: 30 },
   ];
 
+  useEffect(() => {
+    const fetchRoleData = async () => {
+      try {
+        setLoading(true);
+        const res = await projectService.getAllProjects();
+        const allProjects = res.data?.data || [];
+
+        // Filter based on role
+        let relevantProjects = [];
+        if (role === 'admin') {
+          relevantProjects = allProjects;
+        } else if (role === 'manager') {
+          relevantProjects = allProjects.filter(p => p.manager?._id === user?._id || p.manager === user?._id);
+        } else if (role === 'developer') {
+          relevantProjects = allProjects.filter(p => p.teamMembers?.some(m => m._id === user?._id || m === user?._id));
+        } else if (role === 'client') {
+          relevantProjects = allProjects.filter(p => p.clients?.some(c => c._id === user?._id || c === user?._id));
+        }
+
+        const rev = relevantProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
+        const active = relevantProjects.filter(p => p.status === 'active').length;
+        const completed = relevantProjects.filter(p => p.status === 'completed').length;
+
+        setMetrics({
+          projectsCount: relevantProjects.length,
+          revenue: rev,
+          activeProjects: active,
+          completedProjects: completed
+        });
+
+      } catch (err) {
+        console.error("Failed to fetch analytics data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user && role) {
+      fetchRoleData();
+    }
+  }, [user, role]);
+
+  const displayStats = [
+    { id: 1, label: "Total Projects", value: metrics.projectsCount, change: "+12%", trend: "up" },
+    { id: 2, label: "Active Projects", value: metrics.activeProjects, change: "+5%", trend: "up" },
+    { id: 3, label: "Completed", value: metrics.completedProjects, change: "Steady", trend: "up" },
+    { id: 4, label: "Revenue", value: `$${metrics.revenue.toLocaleString()}`, change: "+18%", trend: "up" },
+  ];
+
   return (
     <div className="p-8 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)] no-scrollbar bg-background transition-colors duration-300">
-      
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Analytics Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            {role.charAt(0).toUpperCase() + role.slice(1)} Analytics
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Displaying insights for {dummyData.analytics.length} key metrics.
+            Displaying insights for your assigned portfolio.
           </p>
         </div>
         <Button variant="outline" className="rounded-xl border-border bg-card">
@@ -83,8 +142,8 @@ const Analytics = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {dummyData.analytics.slice(0, 4).map((stat) => (
-          <StatCard 
+        {displayStats.map((stat) => (
+          <StatCard
             key={stat.id}
             title={stat.label}
             value={stat.value}
@@ -141,7 +200,7 @@ const Analytics = () => {
           <CardHeader className="flex flex-row items-center justify-between pb-8">
             <div>
               <CardTitle className="text-lg font-bold text-foreground">Project Velocity</CardTitle>
-              <CardDescription>Performance trends for {dummyData.projects.length} total projects.</CardDescription>
+              <CardDescription>Performance trends for your active projects.</CardDescription>
             </div>
             <Button variant="link" className="text-primary text-xs font-bold hover:underline h-auto p-0">View Details</Button>
           </CardHeader>
@@ -174,13 +233,13 @@ const Analytics = () => {
         <Card className="md:col-span-3 rounded-3xl border-border bg-card p-6">
           <h4 className="font-bold mb-4">Secondary Metrics</h4>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-             {dummyData.analytics.slice(6, 11).map((stat) => (
-               <div key={stat.id} className="p-4 rounded-2xl bg-muted/50">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground">{stat.label}</p>
-                  <p className="text-lg font-bold">{stat.value}</p>
-                  <p className={`text-[10px] ${stat.trend === 'up' ? 'text-emerald-500' : 'text-rose-500'}`}>{stat.change}</p>
-               </div>
-             ))}
+            {dummyData.analytics.slice(6, 11).map((stat) => (
+              <div key={stat.id} className="p-4 rounded-2xl bg-muted/50">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">{stat.label}</p>
+                <p className="text-lg font-bold">{stat.value}</p>
+                <p className={`text-[10px] ${stat.trend === 'up' ? 'text-emerald-500' : 'text-rose-500'}`}>{stat.change}</p>
+              </div>
+            ))}
           </div>
         </Card>
       </div>

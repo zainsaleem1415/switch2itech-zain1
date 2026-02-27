@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { 
-  Search, Plus, Code, ExternalLink, Loader2, 
-  TrendingUp, BarChart3, Layers, 
+import projectService from "../../api/projectService";
+import userService from "../../api/userService";
+import {
+  Search, Plus, Code, ExternalLink, Loader2,
+  TrendingUp, BarChart3, Layers,
   Globe, ShieldCheck, Zap, Target, Users, LayoutGrid, ArrowLeft,
   Building2
 } from "lucide-react";
@@ -10,74 +11,116 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../components/ui/dialog";
+import { Label } from "../../components/ui/label";
 import Addproject from '../Addproject/Addproject';
 
 const DUMMY_DATA = [
-  { 
-    _id: "1", 
-    name: "Nexus Cloud Infrastructure", 
-    category: "DevOps", 
-    desc: "Enterprise-level automation for cloud management.", 
-    clients: "Global Tech Corp", 
-    progress: 95, 
+  {
+    _id: "1",
+    name: "Nexus Cloud Infrastructure",
+    category: "DevOps",
+    desc: "Enterprise-level automation for cloud management.",
+    clients: "Global Tech Corp",
+    progress: 95,
     status: "Completed",
-    imageUrl: "https://i.pinimg.com/736x/38/f2/e4/38f2e4e6e6529b0943676a50bbc8c3f5.jpg" 
+    imageUrl: "https://i.pinimg.com/736x/38/f2/e4/38f2e4e6e6529b0943676a50bbc8c3f5.jpg"
   },
-  { 
-    _id: "2", 
-    name: "FinFlow Mobile Wallet", 
-    category: "FinTech", 
-    desc: "Next-gen wallet with biometric security.", 
-    clients: "Silverline Banking", 
-    progress: 88, 
+  {
+    _id: "2",
+    name: "FinFlow Mobile Wallet",
+    category: "FinTech",
+    desc: "Next-gen wallet with biometric security.",
+    clients: "Silverline Banking",
+    progress: 88,
     status: "Review",
     imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1000&auto=format&fit=crop"
   },
-  { 
-    _id: "3", 
-    name: "Aether AI Engine", 
-    category: "AI", 
-    desc: "Predictive analytics engine processing multi-terabyte datasets.", 
-    clients: "RetailHub Global", 
-    progress: 62, 
+  {
+    _id: "3",
+    name: "Aether AI Engine",
+    category: "AI",
+    desc: "Predictive analytics engine processing multi-terabyte datasets.",
+    clients: "RetailHub Global",
+    progress: 62,
     status: "Active",
     imageUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1000&auto=format&fit=crop"
   },
-  { 
-    _id: "4", 
-    name: "Sentinel Security Suite", 
-    category: "Cyber", 
-    desc: "Real-time threat detection system with AI anomaly identification.", 
-    clients: "Defense Systems Ltd", 
-    progress: 45, 
+  {
+    _id: "4",
+    name: "Sentinel Security Suite",
+    category: "Cyber",
+    desc: "Real-time threat detection system with AI anomaly identification.",
+    clients: "Defense Systems Ltd",
+    progress: 45,
     status: "Active",
     imageUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop"
   }
 ];
 
 const Projects = () => {
-  const [products, setProducts] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentView, setCurrentView] = useState("list");
 
+  // States for Assignment Logic
+  const [users, setUsers] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [assignments, setAssignments] = useState({ manager: "", teamMembers: [], clients: [] });
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/products");
-        const finalData = (response.data?.length > 0 ? response.data : DUMMY_DATA).map(p => ({
+        const [projRes, userRes] = await Promise.all([
+          projectService.getAllProjects(),
+          userService.getUsers()
+        ]);
+
+        const finalData = (projRes.data?.data?.length >= 0 ? projRes.data.data : DUMMY_DATA).map(p => ({
           ...p,
-          imageUrl: p.imageUrl || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000"
+          imageUrl: p.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1000"
         }));
-        setProducts(finalData);
+        setProjects(finalData);
+        setUsers(userRes.data?.data || []);
       } catch (error) {
-        setProducts(DUMMY_DATA);
+        console.error(error);
+        setProjects(DUMMY_DATA);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
+    fetchData();
   }, []);
+
+  const openAssignDialog = (project) => {
+    setSelectedProject(project);
+    setAssignments({
+      manager: project.manager || "",
+      teamMembers: project.teamMembers?.map(t => t._id || t) || [],
+      clients: project.clients?.map(c => c._id || c) || []
+    });
+    setIsAssignDialogOpen(true);
+  };
+
+  const handleAssignSave = async () => {
+    try {
+      await projectService.assignProject(selectedProject._id, assignments);
+      // Update local state temporarily 
+      setProjects(projects.map(p => p._id === selectedProject._id ? { ...p, ...assignments } : p));
+      setIsAssignDialogOpen(false);
+    } catch (error) {
+      console.error("Assignment failed", error);
+      alert("Failed to assign users.");
+    }
+  };
 
   const stats = [
     { label: "Completed", count: 24, icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
@@ -85,9 +128,8 @@ const Projects = () => {
     { label: "In Review", count: 5, icon: Target, color: "text-amber-500", bg: "bg-amber-500/10" },
   ];
 
-  const filteredProjects = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.clients.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProjects = projects.filter(p =>
+    p.title?.toLowerCase().includes(searchQuery.toLowerCase()) || p.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) return (
@@ -115,7 +157,7 @@ const Projects = () => {
 
   return (
     <div className="min-h-screen bg-background p-6 lg:p-10 space-y-8 max-w-[1600px] mx-auto transition-colors duration-300">
-      
+
       {/* 1. Header & KPI Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b">
         <div className="space-y-1">
@@ -148,16 +190,16 @@ const Projects = () => {
           <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Strategic Clients</h2>
         </div>
         <div className="flex flex-wrap gap-4">
-          {[...new Set(products.map(p => p.clients))].map((client, i) => (
-            <div 
-              key={i} 
+          {[...new Set(projects.flatMap(p => p.clients))].filter(Boolean).map((client, i) => (
+            <div
+              key={i}
               className="flex items-center gap-3 px-6 py-4 bg-card border border-border/50 rounded-2xl hover:border-primary/50 hover:bg-secondary/10 transition-all duration-300 cursor-default group"
             >
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-lg group-hover:scale-110 transition-transform">
-                {client.charAt(0)}
+                {typeof client === 'object' ? client.name.charAt(0) : "C"}
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-bold tracking-tight">{client}</span>
+                <span className="text-sm font-bold tracking-tight">{typeof client === 'object' ? client.name : "Client Asset"}</span>
                 <span className="text-[10px] text-emerald-500 font-medium">Verified Partner</span>
               </div>
             </div>
@@ -170,16 +212,16 @@ const Projects = () => {
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <Input 
-                placeholder="Filter repositories..." 
+              <Input
+                placeholder="Filter repositories..."
                 className="pl-9 h-10 rounded-lg bg-card"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon"><LayoutGrid size={16}/></Button>
-              <Button variant="ghost" size="icon"><Layers size={16}/></Button>
+              <Button variant="outline" size="icon"><LayoutGrid size={16} /></Button>
+              <Button variant="ghost" size="icon"><Layers size={16} /></Button>
             </div>
           </div>
 
@@ -187,9 +229,9 @@ const Projects = () => {
             {filteredProjects.map((project) => (
               <Card key={project._id} className="group overflow-hidden border-border/50 bg-card hover:shadow-xl transition-all duration-300">
                 <div className="relative h-48 w-full overflow-hidden bg-muted">
-                  <img 
-                    src={project.imageUrl} 
-                    alt={project.name}
+                  <img
+                    src={project.imageUrl || project.coverImage || "https://placehold.co/600x400"}
+                    alt={project.title || project.name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   <div className="absolute top-3 right-3">
@@ -208,10 +250,10 @@ const Projects = () => {
                       {project.category}
                     </Badge>
                   </div>
-                  <CardTitle className="text-lg pt-4">{project.name}</CardTitle>
-                  <CardDescription className="line-clamp-2">{project.desc}</CardDescription>
+                  <CardTitle className="text-lg pt-4">{project.title || project.name}</CardTitle>
+                  <CardDescription className="line-clamp-2">{project.description || project.desc}</CardDescription>
                 </CardHeader>
-                
+
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
@@ -223,11 +265,18 @@ const Projects = () => {
                     </div>
                   </div>
                   <div className="pt-2 flex items-center justify-between border-t border-border/50">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                       <Globe size={14} /> {project.clients}
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mr-2">
+                      <Users size={14} />
+                      Manager: {project.manager ? (typeof project.manager === 'object' ? project.manager.name : 'Assigned') : 'None'} |
+                      Devs: {project.teamMembers?.length || 0}
                     </div>
-                    <Button variant="ghost" size="sm" className="h-8 text-xs font-bold gap-2">
-                      Asset <ExternalLink size={12} />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-[10px] font-bold gap-2 whitespace-nowrap"
+                      onClick={() => openAssignDialog(project)}
+                    >
+                      Assign <ExternalLink size={12} />
                     </Button>
                   </div>
                 </CardContent>
@@ -277,18 +326,18 @@ const Projects = () => {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50">
-                {products.slice(0, 4).map((p, i) => (
+                {projects.slice(0, 4).map((p, i) => (
                   <div key={i} className="flex items-center justify-between p-4 hover:bg-secondary/20 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-primary border">
-                        {p.clients.charAt(0)}
+                        {p.title?.charAt(0) || p.name?.charAt(0) || "P"}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-semibold leading-none">{p.clients}</span>
+                        <span className="text-sm font-semibold leading-none">{p.title || p.name}</span>
                         <span className="text-[10px] text-muted-foreground mt-1">Status: {p.status}</span>
                       </div>
                     </div>
-                    <Badge variant={p.status === 'Completed' ? 'default' : 'outline'} className="text-[9px]">
+                    <Badge variant={p.status === 'Completed' || p.status === 'completed' ? 'default' : 'outline'} className="text-[9px]">
                       {p.status}
                     </Badge>
                   </div>
@@ -298,6 +347,95 @@ const Projects = () => {
           </Card>
         </div>
       </div>
+
+      {/* Assignment Dialog */}
+      <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Assign Users to {selectedProject?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            {/* Manager Dropdown */}
+            <div className="grid gap-2">
+              <Label className="font-bold">Project Manager</Label>
+              <select
+                className="w-full h-10 px-3 rounded-md border text-sm"
+                value={assignments.manager}
+                onChange={(e) => setAssignments({ ...assignments, manager: e.target.value })}
+              >
+                <option value="">Unassigned</option>
+                {users.filter(u => u.role === 'admin' || u.role === 'manager').map(u => (
+                  <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Team Members List (Developers) */}
+            <div className="grid gap-2">
+              <Label className="font-bold">Add Developer</Label>
+              <select
+                className="w-full h-10 px-3 rounded-md border text-sm"
+                onChange={(e) => {
+                  if (e.target.value && !assignments.teamMembers.includes(e.target.value)) {
+                    setAssignments({ ...assignments, teamMembers: [...assignments.teamMembers, e.target.value] });
+                  }
+                }}
+              >
+                <option value="">Select a Developer...</option>
+                {users.filter(u => u.role === 'developer').map(u => (
+                  <option key={u._id} value={u._id}>{u.name}</option>
+                ))}
+              </select>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {assignments.teamMembers.map(devId => {
+                  const dev = users.find(u => u._id === devId);
+                  if (!dev) return null;
+                  return (
+                    <Badge key={devId} variant="secondary" className="cursor-pointer" onClick={() => {
+                      setAssignments({ ...assignments, teamMembers: assignments.teamMembers.filter(id => id !== devId) });
+                    }}>
+                      {dev.name} ×
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Clients List */}
+            <div className="grid gap-2">
+              <Label className="font-bold">Add Client</Label>
+              <select
+                className="w-full h-10 px-3 rounded-md border text-sm"
+                onChange={(e) => {
+                  if (e.target.value && !assignments.clients.includes(e.target.value)) {
+                    setAssignments({ ...assignments, clients: [...assignments.clients, e.target.value] });
+                  }
+                }}
+              >
+                <option value="">Select a Client...</option>
+                {users.filter(u => u.role === 'client').map(u => (
+                  <option key={u._id} value={u._id}>{u.name}</option>
+                ))}
+              </select>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {assignments.clients.map(clientId => {
+                  const cl = users.find(u => u._id === clientId);
+                  if (!cl) return null;
+                  return (
+                    <Badge key={clientId} variant="secondary" className="cursor-pointer bg-blue-100 text-blue-800" onClick={() => {
+                      setAssignments({ ...assignments, clients: assignments.clients.filter(id => id !== clientId) });
+                    }}>
+                      {cl.name} ×
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Button onClick={handleAssignSave} className="w-full mt-4 bg-primary text-white">Save Assignments</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

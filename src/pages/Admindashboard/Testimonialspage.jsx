@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { 
-  Star, MessageSquare, CheckCircle2, 
-  Clock, Award, Search, Filter, 
+import {
+  Star, MessageSquare, CheckCircle2,
+  Clock, Award, Search, Filter,
   Trash2, Eye, EyeOff, MoreVertical,
   ThumbsUp, User
 } from "lucide-react";
@@ -52,17 +52,53 @@ const Testimonialspage = () => {
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const fetchReviews = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/testimonials", { withCredentials: true });
+      setReviews(res.data?.data?.length >= 0 ? res.data.data : MOCK_REVIEWS);
+    } catch (error) {
+      console.error(error);
+      setReviews(MOCK_REVIEWS);
+    }
+  };
+
   useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/testimonials");
-        setReviews(res.data?.length > 0 ? res.data : MOCK_REVIEWS);
-      } catch (err) {
-        setReviews(MOCK_REVIEWS);
-      }
-    };
     fetchReviews();
   }, []);
+
+  const handleApprove = async (id, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      await axios.patch(`http://localhost:5000/api/testimonials/${id}`, { isApproved: newStatus }, { withCredentials: true });
+      setReviews(reviews.map(r => r._id === id ? { ...r, isApproved: newStatus } : r));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update status");
+    }
+  };
+
+  const handleToggleFeatured = async (id, currentFeatured) => {
+    try {
+      const newFeatured = !currentFeatured;
+      await axios.patch(`http://localhost:5000/api/testimonials/${id}`, { isFeatured: newFeatured }, { withCredentials: true });
+      setReviews(reviews.map(r => r._id === id ? { ...r, isFeatured: newFeatured } : r));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update featured status");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this testimonial?")) {
+      try {
+        await axios.delete(`http://localhost:5000/api/testimonials/${id}`, { withCredentials: true });
+        setReviews(reviews.filter(r => r._id !== id));
+      } catch (err) {
+        console.error(err);
+        alert("Failed to delete testimonial");
+      }
+    }
+  };
 
   const stats = [
     { label: "Total Reviews", value: reviews.length, icon: MessageSquare, color: "text-blue-500", bg: "bg-blue-500/10" },
@@ -71,15 +107,16 @@ const Testimonialspage = () => {
   ];
 
   const filteredReviews = reviews.filter(r => {
-    const matchesTab = activeTab === "All" || 
-                       (activeTab === "Featured" ? r.isFeatured : r.status === activeTab);
-    const matchesSearch = r.clientName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTab = activeTab === "All" ||
+      (activeTab === "Featured" ? r.isFeatured :
+        (activeTab === "Published" ? r.isApproved : !r.isApproved));
+    const matchesSearch = r.authorNameOverride?.toLowerCase().includes(searchTerm.toLowerCase()) || r.author?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || "";
     return matchesTab && matchesSearch;
   });
 
   return (
     <div className="p-6 lg:p-10 space-y-8 bg-background min-h-screen animate-in fade-in duration-500">
-      
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Social Proof Management</h1>
@@ -114,19 +151,18 @@ const Testimonialspage = () => {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                    activeTab === tab ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === tab ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   {tab}
                 </button>
               ))}
             </div>
-            
+
             <div className="relative w-full lg:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <Input 
-                placeholder="Search by client name..." 
+              <Input
+                placeholder="Search by client name..."
                 className="pl-9 h-10 rounded-xl"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -134,24 +170,29 @@ const Testimonialspage = () => {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-0">
           <div className="grid grid-cols-1 divide-y divide-border/50">
             {filteredReviews.map((review) => (
               <div key={review._id} className="p-6 hover:bg-muted/20 transition-all group relative">
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                   <div className="flex gap-4">
-                    <img src={review.avatar} className="h-14 w-14 rounded-2xl border-2 border-muted object-cover" alt="" />
+                    <img src={review.authorAvatarOverride || review.author?.profile || "https://placehold.co/150"} className="h-14 w-14 rounded-2xl border-2 border-muted object-cover" alt="" />
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-lg">{review.clientName}</h4>
+                        <h4 className="font-bold text-lg">{review.authorNameOverride || review.author?.name || "Anonymous User"}</h4>
                         {review.isFeatured && (
-                          <Badge className="bg-amber-500/10 text-amber-600 border-none px-2 py-0 h-5 text-[10px] font-black uppercase">
+                          <Badge className="bg-amber-500/10 text-amber-600 border-none px-2 py-0 h-5 text-[10px] font-black uppercase cursor-pointer" onClick={() => handleToggleFeatured(review._id, review.isFeatured)}>
                             <Award size={10} className="mr-1" /> Featured
                           </Badge>
                         )}
+                        {!review.isFeatured && (
+                          <Badge className="bg-muted text-muted-foreground border-none px-2 py-0 h-5 text-[10px] font-black uppercase cursor-pointer hover:bg-amber-500/10 hover:text-amber-600" onClick={() => handleToggleFeatured(review._id, review.isFeatured)}>
+                            Feature
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground font-medium">{review.company}</p>
+                      <p className="text-sm text-muted-foreground font-medium">{review.authorRoleOverride || review.author?.role}</p>
                       <div className="flex text-amber-400 gap-0.5 mt-1">
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} size={14} fill={i < review.rating ? "currentColor" : "none"} strokeWidth={3} />
@@ -162,24 +203,21 @@ const Testimonialspage = () => {
 
                   <div className="flex-1 max-w-2xl">
                     <p className="text-sm text-foreground/80 leading-relaxed italic">"{review.content}"</p>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase mt-4 tracking-widest">Received on {review.date}</p>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase mt-4 tracking-widest">Received on {new Date(review.createdAt || Date.now()).toLocaleDateString()}</p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {review.status === "Pending" ? (
-                      <Button variant="outline" size="sm" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500 hover:text-white rounded-lg font-bold text-xs h-9">
+                    {!review.isApproved ? (
+                      <Button variant="outline" size="sm" className="bg-emerald-500/5 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500 hover:text-white rounded-lg font-bold text-xs h-9" onClick={() => handleApprove(review._id, review.isApproved)}>
                         Approve
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
-                        {review.status === "Published" ? <Eye size={18} /> : <EyeOff size={18} />}
+                      <Button variant="ghost" size="icon" className="text-emerald-600 hover:text-rose-500" onClick={() => handleApprove(review._id, review.isApproved)} title="Unpublish">
+                        <Eye size={18} />
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="text-rose-500 hover:bg-rose-50 rounded-lg">
+                    <Button variant="ghost" size="icon" className="text-rose-500 hover:bg-rose-50 rounded-lg" onClick={() => handleDelete(review._id)}>
                       <Trash2 size={18} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="rounded-lg">
-                      <MoreVertical size={18} />
                     </Button>
                   </div>
                 </div>

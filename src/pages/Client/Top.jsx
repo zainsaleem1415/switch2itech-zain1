@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import userService from "../../api/userService";
+import projectService from "../../api/projectService";
 import { Search, Star, StarHalf, Loader2 } from "lucide-react";
 import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
@@ -14,12 +15,8 @@ const Top = ({ onSearch }) => {
       try {
         // Fetching both users and projects
         const [userRes, projectRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/users", {
-            withCredentials: true,
-          }),
-          axios.get("http://localhost:5000/api/projects", {
-            withCredentials: true,
-          }),
+          userService.getUsers(),
+          projectService.getAllProjects()
         ]);
 
         if (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import testimonialService from "../../api/testimonialService";
 import {
   Pencil,
   Star,
@@ -24,17 +24,18 @@ const Main = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; // Increased for a better grid feel
 
-  const API_URL = "http://localhost:5000/api/testimonials";
+
 
   // 1. Fetch Testimonials from BE
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(API_URL, { withCredentials: true });
+        const response = await testimonialService.getTestimonials();
         const data = response.data.data || response.data;
         setTestimonials(Array.isArray(data) ? data : []);
       } catch (error) {
+        console.error(error);
         console.error("Error fetching testimonials:", error);
       } finally {
         setLoading(false);
@@ -47,9 +48,10 @@ const Main = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Delete this testimonial?")) {
       try {
-        await axios.delete(`${API_URL}/${id}`, { withCredentials: true });
+        await testimonialService.deleteTestimonial(id);
         setTestimonials(testimonials.filter((t) => t._id !== id));
       } catch (error) {
+        console.error(error);
         alert("Failed to delete");
       }
     }

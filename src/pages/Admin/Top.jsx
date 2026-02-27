@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import projectService from "../../api/projectService";
+import productService from "../../api/productService";
+import userService from "../../api/userService";
+import testimonialService from "../../api/testimonialService";
 import {
   Monitor,
   Package,
@@ -13,7 +16,7 @@ import {
 import { Card, CardContent } from "../../components/ui/card";
 import ProjectPage from "../Admindashboard/Projectspage";
 import Productpage from "../Admindashboard/Productpage";
-import Clientspage from "../Admindashboard/Clientspage";
+import Userspage from "../Admindashboard/Userspage";
 import Testimonialspage from "../Admindashboard/Testimonialspage";
 import Revenuepage from "../Admindashboard/Revenuepage";
 
@@ -33,18 +36,10 @@ const Top = ({ currentView, setCurrentView }) => {
       try {
         setLoading(true);
         const [projRes, prodRes, userRes, testRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/projects", {
-            withCredentials: true,
-          }),
-          axios.get("http://localhost:5000/api/products", {
-            withCredentials: true,
-          }),
-          axios.get("http://localhost:5000/api/users", {
-            withCredentials: true,
-          }),
-          axios.get("http://localhost:5000/api/testimonials", {
-            withCredentials: true,
-          }),
+          projectService.getAllProjects(),
+          productService.getAllProducts(),
+          userService.getUsers(),
+          testimonialService.getTestimonials(),
         ]);
 
         // Calculate Revenue from Project Budgets
@@ -53,15 +48,13 @@ const Top = ({ currentView, setCurrentView }) => {
           0
         );
 
-        // Filter only users with role 'client'
-        const clientCount = userRes.data.data.filter(
-          (u) => u.role === "client"
-        ).length;
+        // Consider all users for the Manage Users tab
+        const userCount = userRes.data.data.length;
 
         setData({
           projects: projRes.data.data.length,
           products: prodRes.data.data.length,
-          clients: clientCount,
+          users: userCount,
           testimonials: testRes.data.data.length,
           revenue: totalRevenue,
         });
@@ -95,10 +88,10 @@ const Top = ({ currentView, setCurrentView }) => {
       labelColor: "text-blue-600 bg-blue-500/10",
     },
     {
-      id: "clients",
-      title: "Active Clients",
-      value: loading ? "..." : data.clients,
-      label: "Active",
+      id: "users",
+      title: "Manage Users",
+      value: loading ? "..." : data.users,
+      label: "All Users",
       icon: <Users className="w-6 h-6 text-orange-500" />,
       labelColor: "text-emerald-600 bg-emerald-500/10",
     },
@@ -146,11 +139,11 @@ const Top = ({ currentView, setCurrentView }) => {
             <Productpage />
           </>
         );
-      case "clients":
+      case "users":
         return (
           <>
             <BackButton />
-            <Clientspage />
+            <Userspage />
           </>
         );
       case "testimonials":

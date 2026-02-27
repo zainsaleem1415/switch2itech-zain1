@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import testimonialService from "../../api/testimonialService";
 import {
   X,
   Star,
@@ -32,7 +32,7 @@ export function ReviewForm({ open, onOpenChange, productId, projectId }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/testimonials", {
+      await testimonialService.createTestimonial({
         ...formData,
         rating,
         product: productId,
@@ -43,7 +43,8 @@ export function ReviewForm({ open, onOpenChange, productId, projectId }) {
         onOpenChange(false);
         setSuccess(false);
       }, 2000);
-    } catch (err) {
+    } catch (error) {
+      console.error(error);
       alert("Submission failed. Check console.");
     } finally {
       setLoading(false);

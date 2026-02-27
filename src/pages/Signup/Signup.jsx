@@ -11,11 +11,13 @@ import {
   Briefcase,
   Loader2,
 } from "lucide-react";
-import axios from "axios";
+import authService from "../../api/authService";
+import { useAuth } from "../../context/ContextProvider";
 import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { setAuthenticated, setUser, setRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -40,16 +42,17 @@ const Signup = () => {
     setError("");
 
     try {
-      // API call to your backend controller
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/register",
-        formData
-      );
+      const response = await authService.register(formData);
 
-      if (response.data.status === "success") {
-        // Token is stored in HTTP-only cookie by backend, but also available in data.token
-        localStorage.setItem("token", response.data.data.token);
-        navigate("/dashboard");
+      if (response.data.status === "success" || response.data.user) {
+        const userData = response.data.data?.user || response.data.data || response.data.user;
+
+        setUser(userData);
+        setRole(userData?.role || 'user');
+        setAuthenticated(true);
+
+        localStorage.setItem("user", JSON.stringify(userData));
+        navigate("/");
       }
     } catch (err) {
       setError(
