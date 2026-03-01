@@ -2,6 +2,7 @@ import tailwindAnimate from "tailwindcss-animate";
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  // Use "class" so you can toggle dark mode manually by adding .dark to <html>
   darkMode: ["class"],
   content: [
     "./index.html",
@@ -20,6 +21,7 @@ export default {
     },
     extend: {
       colors: {
+        // These HSL variables MUST exist in your index.css file
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
         ring: "hsl(var(--ring) / <alpha-value>)",
@@ -75,5 +77,5 @@ export default {
       },
     },
   },
-  plugins: [tailwindAnimate], 
+  plugins: [tailwindAnimate],
 };

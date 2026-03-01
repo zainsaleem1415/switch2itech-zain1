@@ -5,7 +5,7 @@ export function ProductGallery({ images }) {
 
   return (
     <div className="space-y-4">
-      <div className="aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
+      <div className="aspect-video w-full overflow-hidden rounded-lg bg-muted">
         <img
           src={images[selectedImage]}
           alt={`Product view ${selectedImage + 1}`}
@@ -19,8 +19,8 @@ export function ProductGallery({ images }) {
             onClick={() => setSelectedImage(index)}
             className={`aspect-video overflow-hidden rounded-lg border-2 transition-all ${
               selectedImage === index
-                ? "border-blue-600 ring-2 ring-blue-600 ring-offset-2"
-                : "border-gray-200 hover:border-gray-300"
+                ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
+                : "border-border hover:border-primary/50"
             }`}
           >
             <img

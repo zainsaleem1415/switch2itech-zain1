@@ -3,7 +3,13 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { X, Star, Loader2 } from "lucide-react";
 import testimonialService from "../../api/testimonialService";
 
-export function ReviewForm({ open, onOpenChange, productName, productId }) {
+export function ReviewForm({
+  open,
+  onOpenChange,
+  productName,
+  productId,
+  onSubmitted,
+}) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [name, setName] = useState("");
@@ -14,6 +20,10 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!productId) {
+      alert("Product ID is missing. Please reopen this product and try again.");
+      return;
+    }
     if (rating === 0) {
       alert("Please select a rating.");
       return;
@@ -21,12 +31,14 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
 
     setLoading(true);
     try {
-      await testimonialService.createTestimonial({
+      const response = await testimonialService.createTestimonial({
         authorNameOverride: name,
         authorRoleOverride: role,
+        authorCompanyOverride: "",
+        title: `Review for ${productName}`,
         rating: rating,
         content: comment,
-        product: productId
+        product: productId,
       });
 
       // Reset form
@@ -35,10 +47,16 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
       setRating(0);
       setComment("");
       onOpenChange(false);
+      onSubmitted?.(response?.data?.data || null);
       alert("Thank you for your review!");
     } catch (error) {
       console.error("Failed to submit review", error);
-      alert("Failed to submit review. It may require approval or you might need to try again.");
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to submit review. It may require approval or you might need to try again.";
+      alert(message);
     } finally {
       setLoading(false);
     }
@@ -48,16 +66,18 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-[500px] translate-x-[-50%] translate-y-[-50%] overflow-y-auto rounded-lg bg-white p-6 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+        <Dialog.Content className="fixed left-[50%] top-[50%] max-h-[85vh] w-[90vw] max-w-[500px] translate-x-[-50%] translate-y-[-50%] overflow-y-auto rounded-lg border border-border bg-card p-6 text-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
           <div className="flex items-center justify-between mb-4">
-            <Dialog.Title className="text-lg">Write a Review</Dialog.Title>
-            <Dialog.Close className="rounded-full p-1 hover:bg-gray-100 transition-colors">
+            <Dialog.Title className="text-lg font-semibold text-foreground">
+              Write a Review
+            </Dialog.Title>
+            <Dialog.Close className="rounded-full p-1 hover:bg-muted transition-colors">
               <X className="h-5 w-5" />
             </Dialog.Close>
           </div>
 
-          <Dialog.Description className="mb-6 text-gray-600">
-            Share your experience with ProWorkflow Suite to help others make
+          <Dialog.Description className="mb-6 text-muted-foreground">
+            Share your experience with {productName} to help others make
             informed decisions.
           </Dialog.Description>
 
@@ -72,7 +92,7 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
                 placeholder="Enter your name"
               />
             </div>
@@ -87,7 +107,7 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 required
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
                 placeholder="e.g., Product Manager, Developer"
               />
             </div>
@@ -109,14 +129,16 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
                     <Star
                       className={`h-8 w-8 ${star <= (hoveredRating || rating)
                         ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
+                        : "text-muted-foreground/40"
                         }`}
                     />
                   </button>
                 ))}
               </div>
               {rating === 0 && (
-                <p className="mt-1 text-sm text-gray-500">Click to rate</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Click to rate
+                </p>
               )}
             </div>
 
@@ -130,7 +152,7 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
                 onChange={(e) => setComment(e.target.value)}
                 required
                 rows={4}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20"
+                className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/40"
                 placeholder="Tell us about your experience..."
               />
             </div>
@@ -139,7 +161,7 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
               <button
                 type="submit"
                 disabled={rating === 0 || loading}
-                className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground transition-colors hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
               >
                 {loading && <Loader2 size={16} className="animate-spin" />}
                 Submit Review
@@ -147,7 +169,7 @@ export function ReviewForm({ open, onOpenChange, productName, productId }) {
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="rounded-lg border border-gray-300 px-6 py-3 transition-colors hover:bg-gray-50"
+                  className="rounded-lg border border-border px-6 py-3 text-foreground transition-colors hover:bg-muted"
                 >
                   Cancel
                 </button>

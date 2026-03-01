@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     ArrowLeft, Edit3, Save, X, Plus, Trash2, Loader2,
     Briefcase, Calendar, DollarSign, Users, Tag, Flag,
@@ -44,6 +44,25 @@ const priorityColors = {
 
 const fmt = (date) => date ? new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 
+const getProjectImages = (project) => {
+    const images = [];
+
+    if (Array.isArray(project?.image) && project.image.length > 0) {
+        images.push(...project.image);
+    } else if (Array.isArray(project?.images) && project.images.length > 0) {
+        images.push(...project.images);
+    } else if (project?.coverImage) {
+        images.push(project.coverImage);
+    } else if (project?.thumbnail) {
+        images.push(project.thumbnail);
+    }
+
+    if (images.length === 0) {
+        images.push('https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200');
+    }
+
+    return images;
+};
 // ── Inline editable field ─────────────────────────────────────────────────────
 const EditableField = ({ label, value, onSave, canEdit, type = 'text', options }) => {
     const [editing, setEditing] = useState(false);
@@ -102,10 +121,10 @@ const EditableField = ({ label, value, onSave, canEdit, type = 'text', options }
 };
 
 // ── Section Header ────────────────────────────────────────────────────────────
-const SectionHeader = ({ icon: Icon, title, action }) => (
+const SectionHeader = ({ icon, title, action }) => (
     <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-bold flex items-center gap-2">
-            <Icon size={16} className="text-primary" /> {title}
+            {React.createElement(icon, { size: 16, className: 'text-primary' })} {title}
         </h3>
         {action}
     </div>
@@ -491,9 +510,11 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
     const { id: paramId } = useParams();
     const id = projectIdFromProps || paramId;
     const navigate = useNavigate();
-    const { user, role } = useAuth();
+    const location = useLocation();
+    const { role } = useAuth();
+    const clickedProject = location.state?.project || null;
 
-    const [project, setProject] = useState(null);
+    const [project, setProject] = useState(clickedProject);
     const [milestones, setMilestones] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -515,6 +536,8 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
     const canEdit = isAdmin || isManager;
     const canAssign = isAdmin || isManager;
     const canDelete = isAdmin;
+    const projectImages = getProjectImages(project);
+    const primaryImage = projectImages[0];
 
     // ── Fetch data ──────────────────────────────────────────────────────────
     const fetchProject = useCallback(async () => {
@@ -523,13 +546,14 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
                 projectService.getProjectById(id),
                 projectService.getMilestones(id),
             ]);
-            setProject(projRes.data?.data || null);
+            const apiProject = projRes.data?.data || null;
+            setProject(apiProject ? { ...(clickedProject || {}), ...apiProject } : clickedProject);
             setMilestones(msRes.data?.data || []);
         } catch (e) {
             setError('Failed to load project.');
             console.error(e);
         }
-    }, [id]);
+    }, [id, clickedProject]);
 
     useEffect(() => {
         const init = async () => {
@@ -625,7 +649,7 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
             {/* Cover Image Banner */}
             <div className="relative h-48 md:h-64 w-full overflow-hidden bg-muted">
                 <img
-                    src={project.coverImage || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1200'}
+                    src={primaryImage}
                     alt={project.title}
                     className="w-full h-full object-cover"
                 />
@@ -835,7 +859,7 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
                         </div>
 
                         {/* Media Links */}
-                        {(project.coverImage || project.demoVideo) && (
+                        {(projectImages.length > 0 || project.demoVideo) && (
                             <Card className="rounded-2xl border-border/50">
                                 <CardHeader className="pb-3">
                                     <CardTitle className="text-base flex items-center gap-2">
@@ -843,12 +867,12 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex flex-wrap gap-3">
-                                    {project.coverImage && (
-                                        <a href={project.coverImage} target="_blank" rel="noopener noreferrer"
+                                    {projectImages.map((imageUrl, index) => (
+                                        <a key={`${imageUrl}-${index}`} href={imageUrl} target="_blank" rel="noopener noreferrer"
                                             className="flex items-center gap-2 text-xs font-semibold text-primary hover:underline bg-primary/10 px-3 py-2 rounded-lg">
-                                            <ImageIcon size={13} /> Cover Image
+                                            <ImageIcon size={13} /> {index === 0 ? 'Cover Image' : `Image ${index + 1}`}
                                         </a>
-                                    )}
+                                    ))}
                                     {project.demoVideo && (
                                         <a href={project.demoVideo} target="_blank" rel="noopener noreferrer"
                                             className="flex items-center gap-2 text-xs font-semibold text-primary hover:underline bg-primary/10 px-3 py-2 rounded-lg">

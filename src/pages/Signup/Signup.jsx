@@ -14,6 +14,7 @@ const Signup = () => {
   const { setAuthenticated, setUser, setRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [profilePreview, setProfilePreview] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -28,6 +29,18 @@ const Signup = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleProfileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result;
+      setProfilePreview(base64);
+      setFormData((prev) => ({ ...prev, profile: base64 }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
@@ -137,12 +150,17 @@ const Signup = () => {
             <div className="flex flex-col items-center gap-2">
               <div className="relative group cursor-pointer">
                 <div className="h-20 w-20 rounded-full border-2 border-dashed border-border bg-secondary/30 flex items-center justify-center overflow-hidden group-hover:border-primary transition-colors">
-                  {formData.profile ? (
-                    <img src={formData.profile} alt="Preview" className="h-full w-full object-cover" />
+                  {profilePreview ? (
+                    <img src={profilePreview} alt="Preview" className="h-full w-full object-cover" />
                   ) : (
                     <Camera className="text-muted-foreground group-hover:text-primary transition-colors" size={28} />
                   )}
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+                  <input
+                    type="file"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    accept="image/*"
+                    onChange={handleProfileChange}
+                  />
                 </div>
               </div>
               <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Profile Photo</span>

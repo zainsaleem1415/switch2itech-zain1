@@ -2,35 +2,39 @@ import React, { useState, useEffect } from "react";
 import productService from "../../api/productService";
 import {
   Search,
-  Plus,
   Loader2,
   Video,
-  Image as ImageIcon,
-  MessageSquareMore,
-  Layers,
+  ChevronRight,
+  AlertCircle,
+  LayoutGrid,
+  List,
 } from "lucide-react";
-import { Card, CardContent } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
 import Main from "./Main";
+
+// --- SHADCN IMPORT ---
+// Using relative path to ensure it works with your current project structure
+import { Button } from "../../components/ui/button";
 
 const ProductDashboard = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // --- VIEW MODE STATE ---
+  const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
         const response = await productService.getAllProducts();
-        // Handling both { status: 'success', data: [...] } and direct array
-        const fetchedData = response.data.data || response.data;
+        const fetchedData = response.data?.data || response.data || [];
         setProducts(Array.isArray(fetchedData) ? fetchedData : []);
-      } catch (error) {
-        console.error(error);
-        console.error("Error loading products:", error);
+      } catch (err) {
+        console.error("Fetch Error:", err);
+        setError("Failed to sync inventory.");
       } finally {
         setLoading(false);
       }
@@ -38,34 +42,33 @@ const ProductDashboard = () => {
     fetchProducts();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await productService.deleteProduct(id);
-        setProducts(products.filter((p) => p._id !== id));
-        setSelectedProduct(null);
-      } catch (error) {
-        console.error(error);
-        alert("Delete failed.");
-      }
-    }
-  };
-
   const filteredProducts = products.filter(
     (p) =>
-      p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.category || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading)
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-primary" size={40} />
-          <p className="text-muted-foreground font-medium animate-pulse">
-            Syncing Inventory...
-          </p>
-        </div>
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-primary mb-2" size={32} />
+        <p className="text-sm font-medium text-muted-foreground">
+          Loading Inventory...
+        </p>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-background text-center px-4">
+        <AlertCircle size={40} className="text-destructive mb-4" />
+        <p className="font-semibold text-muted-foreground">{error}</p>
+        <Button
+          onClick={() => window.location.reload()}
+          className="mt-4 font-bold"
+        >
+          Retry
+        </Button>
       </div>
     );
 
@@ -74,147 +77,199 @@ const ProductDashboard = () => {
       <Main
         product={selectedProduct}
         onBack={() => setSelectedProduct(null)}
-        onDelete={() => handleDelete(selectedProduct._id)}
+        onDelete={() => {
+          setProducts(products.filter((p) => p._id !== selectedProduct._id));
+          setSelectedProduct(null);
+        }}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-12 font-sans text-foreground">
+    <div className="min-h-screen bg-background p-6 md:p-10 font-sans">
       <div className="max-w-7xl mx-auto">
-        {/* --- HEADER --- */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 border-b border-border pb-8">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight">
+            <h1 className="text-3xl font-black tracking-tighter text-foreground">
               Digital Inventory
             </h1>
-            <p className="text-muted-foreground mt-2 font-medium">
-              {filteredProducts.length} Products in Repository
-            </p>
+            {/* <p className="text-muted-foreground text-sm font-medium">
+               {filteredProducts.length} Products
+            </p> */}
           </div>
 
           <div className="flex items-center gap-3">
+            {/* SEARCH */}
             <div className="relative">
               <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                size={16}
               />
-              <Input
+              <input
                 type="text"
                 placeholder="Search inventory..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-11 pr-4 py-6 bg-card border-border rounded-xl w-64 shadow-sm focus:ring-2 focus:ring-primary/20"
+                className="pl-10 pr-4 py-2 bg-card border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 w-full md:w-64 transition-all"
               />
             </div>
-            <Button className="flex items-center gap-2 bg-primary px-6 py-6 rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
-              <Plus size={18} /> New Product
-            </Button>
+
+            {/* --- VIEW TOGGLE --- */}
+            <div className="flex bg-muted/50 p-1 rounded-lg border border-border shadow-sm">
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"} // Change 'secondary' to 'default'
+                size="icon"
+                onClick={() => setViewMode("grid")}
+                className={`h-8 w-8 transition-all ${
+                  viewMode === "grid"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-background"
+                }`}
+              >
+                <LayoutGrid size={16} />
+              </Button>
+
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"} // Change 'secondary' to 'default'
+                size="icon"
+                onClick={() => setViewMode("list")}
+                className={`h-8 w-8 transition-all ${
+                  viewMode === "list"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-background"
+                }`}
+              >
+                <List size={16} />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* --- GRID --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProducts.map((product) => (
-            <Card
-              key={product._id}
-              onClick={() => setSelectedProduct(product)}
-              className="group bg-card border-border rounded-[2.5rem] overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-2 cursor-pointer border-2 hover:border-primary/40 shadow-sm"
-            >
-              {/* Media Preview Section */}
-              <div className="relative h-60 w-full overflow-hidden bg-muted">
-                <img
-                  src={
-                    product.thumbnail ||
-                    (product.image && product.image[0]) ||
-                    "https://placehold.co/600x400?text=No+Preview"
-                  }
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  alt={product.name}
-                />
-
-                {/* Media Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  {product.video?.length > 0 && (
-                    <Badge className="bg-black/60 backdrop-blur-md text-white border-none px-3 py-1">
-                      <Video size={12} className="mr-1.5" /> Video Demo
-                    </Badge>
-                  )}
-                  {product.image?.length > 0 && (
-                    <Badge className="bg-white/90 backdrop-blur-md text-black border-none px-3 py-1 font-bold">
-                      <ImageIcon size={12} className="mr-1.5" />{" "}
-                      {product.image.length} Assets
-                    </Badge>
-                  )}
+        {/* PRODUCTS DISPLAY */}
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-20 border-2 border-dashed border-border rounded-2xl text-muted-foreground font-medium bg-card/50">
+            No items found matching your search.
+          </div>
+        ) : viewMode === "grid" ? (
+          /* --- GRID LAYOUT --- */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProducts.map((product) => (
+              <div
+                key={product._id}
+                onClick={() => setSelectedProduct(product)}
+                className="group cursor-pointer bg-card border border-border rounded-2xl overflow-hidden hover:shadow-2xl hover:border-primary/20 transition-all duration-300"
+              >
+                <div className="relative h-48 w-full overflow-hidden bg-muted">
+                  <img
+                    src={
+                      product.thumbnail ||
+                      (product.image && product.image[0]) ||
+                      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800"
+                    }
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    alt={product.name}
+                  />
+                  <div className="absolute top-3 left-3">
+                    {product.video?.length > 0 && (
+                      <span className="bg-black/60 text-white text-[10px] px-2 py-1 rounded-md flex items-center gap-1 backdrop-blur-md">
+                        <Video size={10} /> Video
+                      </span>
+                    )}
+                  </div>
+                  <span className="absolute bottom-3 right-3 bg-white/90 text-slate-900 text-[10px] px-3 py-1 rounded-full shadow-sm font-bold uppercase border border-slate-100">
+                    {product.category || "General"}
+                  </span>
                 </div>
 
-                <div className="absolute top-4 right-4">
-                  <Badge className="bg-primary text-primary-foreground font-black uppercase text-[10px] px-4 py-1 rounded-full shadow-lg">
-                    {product.category}
-                  </Badge>
-                </div>
-              </div>
-
-              <CardContent className="p-8">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
-                    {product.name}
-                  </h3>
-                  {product.faqs?.length > 0 && (
-                    <div
-                      className="flex items-center text-muted-foreground gap-1"
-                      title={`${product.faqs.length} FAQs available`}
-                    >
-                      <MessageSquareMore size={16} />
-                      <span className="text-xs font-bold">
-                        {product.faqs.length}
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
+                      {product.name}
+                    </h3>
+                    <ChevronRight
+                      size={18}
+                      className="text-muted-foreground group-hover:translate-x-1 transition-all"
+                    />
+                  </div>
+                  <p className="text-muted-foreground text-xs line-clamp-2 mb-6 h-16 leading-relaxed">
+                    {product.desc ||
+                      "Detailed product specs are currently being updated."}
+                  </p>
+                  <div className="flex items-center justify-between pt-5 border-t border-border/50">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5">
+                        Status
+                      </span>
+                      <span
+                        className={`text-xs font-bold ${product.status === "Out of Stock" ? "text-destructive" : "text-green-600"}`}
+                      >
+                        {product.status || "In Stock"}
                       </span>
                     </div>
-                  )}
-                </div>
-
-                <p className="text-muted-foreground text-sm line-clamp-2 mb-6 leading-relaxed">
-                  {product.desc}
-                </p>
-
-                {/* Tech Stack Mapping */}
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {product.techStack?.slice(0, 4).map((tech, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="px-3 py-1 bg-secondary/50 text-[10px] font-bold uppercase tracking-wider"
-                    >
-                      {tech}
-                    </Badge>
-                  ))}
-                  {product.techStack?.length > 4 && (
-                    <span className="text-[10px] font-bold text-muted-foreground self-center">
-                      +{product.techStack.length - 4} more
-                    </span>
-                  )}
-                </div>
-
-                {/* Footer Section: Client & Metadata */}
-                <div className="flex items-center justify-between pt-6 border-t border-border/50">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest mb-1">
-                      Primary Client
-                    </span>
-                    <span className="text-sm font-bold text-foreground/90">
-                      {product.clients && product.clients.length > 0
-                        ? product.clients[0].name
-                        : "Public Resource"}
-                    </span>
-                  </div>
-                  <div className="h-10 w-10 rounded-full bg-secondary/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                    <Layers size={18} />
+                    <div className="flex flex-col text-right">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5">
+                        Stock
+                      </span>
+                      <span className="text-xs font-bold text-foreground">
+                        {product.stock || "Active"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* --- LIST LAYOUT --- */
+          <div className="space-y-4">
+            {filteredProducts.map((product) => (
+              <div
+                key={product._id}
+                onClick={() => setSelectedProduct(product)}
+                className="group cursor-pointer bg-card border border-border rounded-xl p-4 flex items-center gap-6 hover:border-primary/50 hover:shadow-md transition-all duration-200"
+              >
+                <div className="h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                  <img
+                    src={
+                      product.thumbnail ||
+                      (product.image && product.image[0]) ||
+                      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"
+                    }
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                    <span className="text-[10px] bg-muted px-2 py-0.5 rounded font-bold text-muted-foreground uppercase tracking-tighter">
+                      {product.category}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-1">
+                    {product.desc}
+                  </p>
+                </div>
+                <div className="hidden md:flex flex-col items-end gap-1 w-32">
+                  <span
+                    className={`text-xs font-bold ${product.status === "Out of Stock" ? "text-destructive" : "text-green-600"}`}
+                  >
+                    {product.status || "In Stock"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-black">
+                    Qty: {product.stock || "0"}
+                  </span>
+                </div>
+                <ChevronRight
+                  size={18}
+                  className="text-muted-foreground group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
