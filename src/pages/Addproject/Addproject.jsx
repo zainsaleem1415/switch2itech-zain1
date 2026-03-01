@@ -15,7 +15,7 @@ import { useAuth } from "../../context/ContextProvider";
 const selectClass =
   "w-full h-10 px-3 rounded-xl border border-input bg-background text-sm focus:ring-2 focus:ring-primary outline-none transition-all";
 
-const Addproject = ({ onSuccess }) => {
+const Addproject = ({ onSuccess, initialData }) => {
   const { role } = useAuth();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: "", message: "" });
@@ -49,6 +49,28 @@ const Addproject = ({ onSuccess }) => {
       userService.getUsers().then(res => setAllUsers(res.data?.data || [])).catch(() => { });
     }
   }, [canAssignTeam]);
+
+  useEffect(() => {
+    if (initialData) {
+      setProject({
+        title: initialData.title || initialData.name || "",
+        description: initialData.description || "",
+        status: initialData.status || "planning",
+        priority: initialData.priority || "medium",
+        budget: initialData.budget || "",
+        currency: initialData.currency || "USD",
+        startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : "",
+        endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : "",
+        tags: Array.isArray(initialData.tags) ? initialData.tags.join(', ') : (initialData.tags || ""),
+      });
+      if (initialData.coverImage) setCoverPreview(initialData.coverImage);
+      if (initialData.faqs) setFaqs(initialData.faqs.length > 0 ? initialData.faqs : [{ question: "", answer: "" }]);
+
+      setSelectedManager(initialData.manager?._id || initialData.manager || "");
+      setSelectedDevs(initialData.teamMembers?.map(m => m._id || m) || []);
+      setSelectedClients(initialData.clients?.map(c => c._id || c) || []);
+    }
+  }, [initialData]);
 
   const handleChange = (e) =>
     setProject({ ...project, [e.target.name]: e.target.value });
@@ -119,14 +141,19 @@ const Addproject = ({ onSuccess }) => {
     }
 
     try {
-      const response = await projectService.createProject(formData);
+      const response = initialData && initialData._id
+        ? await projectService.updateProject(initialData._id, formData)
+        : await projectService.createProject(formData);
+
       if (response.data.status === "success" || response.data) {
-        setStatus({ type: "success", message: "Project created successfully! 🎉" });
+        setStatus({ type: "success", message: `Project ${initialData ? 'updated' : 'created'} successfully! 🎉` });
         // Reset
-        setProject({ title: "", description: "", status: "planning", priority: "medium", budget: "", currency: "USD", startDate: "", endDate: "", tags: "" });
-        setCoverImage(null); setCoverPreview(null); setDemoVideo(null);
-        setFaqs([{ question: "", answer: "" }]);
-        setSelectedManager(""); setSelectedDevs([]); setSelectedClients([]);
+        if (!initialData) {
+          setProject({ title: "", description: "", status: "planning", priority: "medium", budget: "", currency: "USD", startDate: "", endDate: "", tags: "" });
+          setCoverImage(null); setCoverPreview(null); setDemoVideo(null);
+          setFaqs([{ question: "", answer: "" }]);
+          setSelectedManager(""); setSelectedDevs([]); setSelectedClients([]);
+        }
         if (onSuccess) onSuccess();
       }
     } catch (err) {
@@ -143,8 +170,8 @@ const Addproject = ({ onSuccess }) => {
   return (
     <div className="w-full max-w-3xl mx-auto bg-background p-2 transition-colors duration-300">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-foreground tracking-tight">New Project</h2>
-        <p className="text-muted-foreground text-sm mt-1">Fill in the details below to provision a new project in the ERP system.</p>
+        <h2 className="text-3xl font-bold text-foreground tracking-tight">{initialData ? 'Edit Project' : 'New Project'}</h2>
+        <p className="text-muted-foreground text-sm mt-1">{initialData ? 'Update the selected project configuration logic.' : 'Fill in the details below to provision a new project in the ERP system.'}</p>
       </div>
 
       {status.message && (
@@ -326,9 +353,9 @@ const Addproject = ({ onSuccess }) => {
           ))}
         </fieldset>
 
-        <Button type="submit" disabled={loading} className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20">
+        <Button type="submit" disabled={loading} className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-blue-600 border-0 text-white">
           {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : <Send className="mr-2" size={18} />}
-          Publish Project to ERP
+          {initialData ? 'Publish Project Update' : 'Publish Project to ERP'}
         </Button>
       </form>
     </div>

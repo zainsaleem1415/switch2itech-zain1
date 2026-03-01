@@ -82,13 +82,66 @@
   border: 1px solid hsl(var(--border) / 0.5);
   background-color: hsl(var(--card));
   padding: 1.5rem;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
-    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -10px rgb(0 0 0 / 0.15), 0 0 0 1px hsl(var(--primary) / 0.15);
+    transform: translateY(-3px);
     border-color: hsl(var(--primary) / 0.3);
   }
+}
+
+@utility dashboard-glass {
+  border-radius: 1.25rem;
+  border: 1px solid hsl(var(--border) / 0.4);
+  background: linear-gradient(135deg, hsl(var(--card) / 0.9), hsl(var(--card) / 0.7));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 24px -4px rgb(0 0 0 / 0.08), inset 0 1px 0 hsl(var(--foreground) / 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: 0 12px 32px -6px rgb(0 0 0 / 0.12), inset 0 1px 0 hsl(var(--foreground) / 0.06);
+    transform: translateY(-2px);
+  }
+}
+
+@utility metric-card {
+  border-radius: 1.25rem;
+  border: 1px solid hsl(var(--border) / 0.4);
+  background-color: hsl(var(--card));
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 60%, hsl(var(--primary) / 0.03));
+    pointer-events: none;
+  }
+
+  &:hover {
+    box-shadow: 0 16px 36px -8px rgb(0 0 0 / 0.12);
+    transform: translateY(-2px);
+    border-color: hsl(var(--primary) / 0.25);
+  }
+}
+
+@utility gradient-text {
+  background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--primary)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility hero-gradient {
+  background: linear-gradient(135deg,
+      hsl(var(--primary) / 0.08) 0%,
+      hsl(var(--background)) 40%,
+      hsl(221 83% 60% / 0.05) 100%);
 }
 
 /* ── Theme tokens ────────────────────────────────────────────────────────── */

@@ -2,40 +2,38 @@ import React, { useState, useEffect } from "react"
 import projectService from "../../api/projectService"
 import {
   TrendingUp, DollarSign, Briefcase, CreditCard,
-  Clock, Download, Calendar, ArrowUpRight, Search
+  Clock, Download, Calendar, ArrowUpRight, Search, Loader2, Play
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Badge } from "../../components/ui/badge"
 
-const MOCK_REVENUE_DATA = [
-  { _id: "rev1", projectName: "E-Commerce Platform", client: "Global Retail Inc.", amount: 12500, status: "Paid", date: "2026-02-10", paymentMethod: "Bank Transfer", category: "Development" },
-  { _id: "rev2", projectName: "Cloud Migration", client: "FinFlow IO", amount: 8200, status: "Pending", date: "2026-02-20", paymentMethod: "Stripe", category: "Consulting" },
-  { _id: "rev3", projectName: "UI/UX Redesign", client: "Aether AI", amount: 4500, status: "Paid", date: "2026-01-25", paymentMethod: "PayPal", category: "Design" },
-]
-
 const Revenuepage = () => {
   const [transactions, setTransactions] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     const fetch = async () => {
       try {
+        setLoading(true)
         const res = await projectService.getAllProjects()
         const mapped = (res.data?.data || []).map(p => ({
           _id: p._id,
           projectName: p.title || p.name,
-          client: p.clients?.[0]?.name || "Internal",
+          client: p.clients?.[0]?.name || "Internal App",
           amount: p.budget || 0,
-          status: p.completedAt ? "Paid" : "Pending",
+          status: p.status?.toLowerCase() === 'completed' ? "Paid" : "Pending",
           date: new Date(p.startDate || Date.now()).toLocaleDateString(),
-          paymentMethod: "Project Budget",
+          paymentMethod: p.clients?.length > 0 ? "Bank Transfer" : "Internal Funding",
           category: p.category || "Development",
         }))
-        setTransactions(mapped.length > 0 ? mapped : MOCK_REVENUE_DATA)
-      } catch {
-        setTransactions(MOCK_REVENUE_DATA)
+        setTransactions(mapped)
+      } catch (err) {
+        console.error("Failed to fetch revenue/projects:", err)
+        setTransactions([])
+      } finally {
+        setLoading(false)
       }
     }
     fetch()
@@ -43,11 +41,12 @@ const Revenuepage = () => {
 
   const total = transactions.reduce((s, t) => s + (t.amount || 0), 0)
   const pending = transactions.filter(t => t.status === "Pending").reduce((s, t) => s + (t.amount || 0), 0)
+  const paid = total - pending;
 
   const stats = [
-    { label: "Total Revenue", value: `$${total.toLocaleString()}`, trend: "+18%", icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { label: "Pending Invoices", value: `$${pending.toLocaleString()}`, trend: `${transactions.filter(t => t.status === "Pending").length} items`, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { label: "Project Earnings", value: "$88,400", trend: "70% of total", icon: Briefcase, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Total Revenue", value: `$${(total / 1000).toFixed(1)}k`, trend: "+18%", icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { label: "Pending Invoices", value: `$${(pending / 1000).toFixed(1)}k`, trend: `${transactions.filter(t => t.status === "Pending").length} items`, icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
+    { label: "Project Earnings", value: `$${(paid / 1000).toFixed(1)}k`, trend: `${total ? Math.round((paid / total) * 100) : 0}% collected`, icon: Briefcase, color: "text-blue-500", bg: "bg-blue-500/10" },
     { label: "Average Deal Size", value: `$${Math.round(total / Math.max(transactions.length, 1)).toLocaleString()}`, trend: "+5%", icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-500/10" },
   ]
 
@@ -57,30 +56,50 @@ const Revenuepage = () => {
   )
 
   return (
-    <div className="min-h-screen bg-background p-8 space-y-8 animate-in fade-in duration-400">
+    <div className="min-h-screen bg-background p-6 md:p-8 space-y-8 animate-in fade-in duration-400">
 
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Financial Overview</h1>
-          <p className="page-subtitle">Track project earnings, transaction history, and fiscal growth</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-xl gap-2"><Calendar size={15} /> Last 30 Days</Button>
-          <Button className="rounded-xl gap-2 shadow-sm shadow-primary/20"><Download size={15} /> Export Report</Button>
+      {/* Hero Header */}
+      <div className="relative rounded-2xl overflow-hidden border border-border/40 bg-card">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-primary/5 pointer-events-none" />
+        <div className="absolute -top-16 -right-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative px-8 py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+                <DollarSign size={12} />
+                Finance Department
+              </div>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight gradient-text py-1">Financial Overview</h1>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+              Track project earnings, automated invoices, transaction history, and fiscal growth in real-time.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="h-11 px-5 rounded-xl font-bold gap-2 hover:bg-secondary/80">
+              <Calendar size={16} /> Last 30 Days
+            </Button>
+            <Button className="h-11 px-6 rounded-xl font-bold gap-2 shadow-lg shadow-emerald-500/20 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-teal-500 hover:to-emerald-500 border-0 text-white transition-all">
+              <Download size={16} /> Export Report
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s, i) => (
-          <div key={i} className="stat-card">
-            <div className="flex items-start justify-between mb-5">
-              <div className={`p-3 rounded-xl ${s.bg}`}><s.icon size={19} className={s.color} /></div>
-              <span className="text-[10px] font-black uppercase tracking-wider bg-secondary text-muted-foreground px-2.5 py-1 rounded-lg">{s.trend}</span>
+          <div key={i} className="metric-card ring-1 ring-border/50 bg-card/40 hover:bg-card">
+            <div className="flex justify-between items-start mb-4">
+              <div className={`p-3 rounded-xl ${s.bg}`}>
+                <s.icon size={20} className={s.color} />
+              </div>
+              <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest">
+                {s.trend}
+              </Badge>
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{s.label}</p>
-            <h3 className="text-2xl font-extrabold mt-1 tracking-tight">{s.value}</h3>
+            <h2 className="text-3xl font-black tabular-nums">{s.value}</h2>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mt-1.5">{s.label}</p>
           </div>
         ))}
       </div>
@@ -89,80 +108,115 @@ const Revenuepage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Revenue Ledger */}
-        <Card className="lg:col-span-2 rounded-2xl border-border/50 shadow-sm overflow-hidden">
-          <CardHeader className="flex flex-col md:flex-row md:items-center justify-between px-6 pt-6 pb-4 border-b border-border/40 gap-4">
+        <div className="lg:col-span-2 dashboard-glass rounded-2xl overflow-hidden border-border/50 shadow-sm flex flex-col">
+          <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-border/40 bg-card/30 gap-4">
             <div>
-              <CardTitle className="text-base font-extrabold">Revenue Ledger</CardTitle>
-              <CardDescription className="text-xs">Earnings breakdown by project</CardDescription>
+              <h2 className="text-base font-extrabold tracking-tight">Revenue Ledger</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Earnings breakdown by project budget via API</p>
             </div>
-            <div className="relative w-60">
+            <div className="relative w-full md:w-60">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-              <Input placeholder="Search projects…" className="pl-9 h-9 rounded-xl text-sm" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <Input
+                placeholder="Search projects…"
+                className="pl-9 h-10 rounded-xl text-sm bg-background border-border/50 focus-visible:ring-primary shadow-sm"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <table className="w-full text-left">
+          </div>
+
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-secondary/30 border-b border-border/40 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground/60">
-                  <th className="px-6 py-3.5">Project &amp; Client</th>
-                  <th className="px-6 py-3.5">Category</th>
-                  <th className="px-6 py-3.5">Amount</th>
-                  <th className="px-6 py-3.5">Status</th>
-                  <th className="px-6 py-3.5 text-right" />
+                <tr className="bg-secondary/20 border-b border-border/40 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">
+                  <th className="px-6 py-4">Project &amp; Client</th>
+                  <th className="px-6 py-4">Category</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
-                {filtered.map(item => (
-                  <tr key={item._id} className="group hover:bg-secondary/20 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-sm">{item.projectName}</p>
-                      <p className="text-[11px] text-muted-foreground">{item.client}</p>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-medium text-muted-foreground">{item.category}</td>
-                    <td className="px-6 py-4 font-extrabold text-sm">${(item.amount || 0).toLocaleString()}</td>
-                    <td className="px-6 py-4">
-                      <Badge className={`rounded-lg border text-[10px] font-black uppercase px-2.5 py-1 ${item.status === "Paid" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"}`}>
-                        {item.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary">
-                        <ArrowUpRight size={14} />
-                      </Button>
+                {loading && filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-bold">
+                      <Loader2 className="animate-spin inline mr-2" size={16} /> Syncing Finances...
                     </td>
                   </tr>
-                ))}
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-bold italic">
+                      No financial records found.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map(item => (
+                    <tr key={item._id} className="group hover:bg-secondary/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-extrabold text-sm">{item.projectName}</p>
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{item.client}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="secondary" className="border border-border/50 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md">
+                          {item.category}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 font-black text-sm text-foreground tabular-nums">
+                        ${(item.amount || 0).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge className={`border rounded-lg text-[9px] font-black uppercase px-2 py-0.5 tracking-widest ${item.status === "Paid" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"}`}>
+                          {item.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-100 lg:opacity-0 group-hover:opacity-100">
+                          <ArrowUpRight size={14} />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Recent Activity */}
-        <Card className="rounded-2xl border-border/50 shadow-sm">
-          <CardHeader className="px-6 pt-6 pb-4 border-b border-border/40">
-            <CardTitle className="text-base font-extrabold">Recent Activity</CardTitle>
-            <CardDescription className="text-xs">Incoming payments and audits</CardDescription>
-          </CardHeader>
-          <CardContent className="px-6 py-5 space-y-4">
-            {transactions.slice(0, 5).map((item, i) => (
-              <div key={i} className="flex items-center gap-3.5">
-                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${item.status === "Paid" ? "bg-emerald-500/10 text-emerald-600" : "bg-secondary text-muted-foreground"}`}>
-                  <CreditCard size={16} />
+        <div className="dashboard-glass rounded-2xl overflow-hidden border-border/50 shadow-sm flex flex-col">
+          <div className="px-6 py-5 border-b border-border/40 bg-card/30">
+            <h2 className="text-base font-extrabold tracking-tight">Recent Activity</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Incoming payments and audits</p>
+          </div>
+
+          <div className="p-0 divide-y divide-border/30">
+            {loading ? (
+              <div className="p-8 text-center"><Loader2 size={24} className="animate-spin text-muted-foreground mx-auto" /></div>
+            ) : transactions.length === 0 ? (
+              <div className="p-8 text-center text-xs font-bold text-muted-foreground">No recent activity.</div>
+            ) : (
+              transactions.slice(0, 7).map((item, i) => (
+                <div key={i} className="flex items-center gap-4 px-6 py-4 hover:bg-secondary/20 transition-colors">
+                  <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${item.status === "Paid" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-secondary text-muted-foreground border-border/50"}`}>
+                    <CreditCard size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-extrabold truncate">{item.client}</p>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mt-0.5">{item.paymentMethod} • {item.date}</p>
+                  </div>
+                  <span className={`text-sm font-black tabular-nums shrink-0 ${item.status === "Paid" ? "text-emerald-500" : "text-amber-500"}`}>
+                    {item.status === "Paid" ? "+" : ""}${(item.amount || 0).toLocaleString()}
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{item.client}</p>
-                  <p className="text-[11px] text-muted-foreground">{item.paymentMethod} · {item.date}</p>
-                </div>
-                <span className={`text-sm font-extrabold shrink-0 ${item.status === "Paid" ? "text-emerald-600" : "text-amber-600"}`}>
-                  {item.status === "Paid" ? "+" : ""}${(item.amount || 0).toLocaleString()}
-                </span>
-              </div>
-            ))}
-            <Button variant="outline" className="w-full rounded-xl font-bold text-xs uppercase tracking-widest mt-2">
+              ))
+            )}
+          </div>
+          <div className="p-4 border-t border-border/40 bg-card/10 mt-auto">
+            <Button variant="outline" className="w-full rounded-xl font-bold text-[10px] uppercase tracking-widest border-border/50 hover:bg-secondary">
               View All Transactions
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
