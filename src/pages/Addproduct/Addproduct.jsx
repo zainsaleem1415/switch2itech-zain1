@@ -15,7 +15,7 @@ import { useAuth } from "../../context/ContextProvider";
 const selectClass =
     "w-full h-10 px-3 rounded-xl border border-input bg-background text-sm focus:ring-2 focus:ring-primary outline-none transition-all";
 
-const Addproduct = ({ onSuccess }) => {
+const Addproduct = ({ onSuccess, initialData }) => {
     const { role } = useAuth();
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState({ type: "", message: "" });
@@ -46,6 +46,19 @@ const Addproduct = ({ onSuccess }) => {
             }).catch(() => { });
         }
     }, [isAdmin]);
+
+    useEffect(() => {
+        if (initialData) {
+            setProduct({
+                name: initialData.name || "",
+                desc: initialData.desc || initialData.description || "",
+                category: initialData.category || "",
+                techStack: Array.isArray(initialData.techStack) ? initialData.techStack.join(', ') : (initialData.techStack || ""),
+            });
+            if (initialData.faqs) setFaqs(initialData.faqs.length > 0 ? initialData.faqs : [{ question: "", answer: "" }]);
+            setSelectedClients(initialData.clients?.map(c => c._id || c) || []);
+        }
+    }, [initialData]);
 
     const handleChange = (e) => setProduct({ ...product, [e.target.name]: e.target.value });
 
@@ -114,10 +127,13 @@ const Addproduct = ({ onSuccess }) => {
         if (validFaqs.length > 0) formData.append("faqs", JSON.stringify(validFaqs));
 
         try {
-            const response = await productService.createProduct(formData);
+            const response = initialData && initialData._id
+                ? await productService.updateProduct(initialData._id, formData)
+                : await productService.createProduct(formData);
+
             if (response.data.status === "success" || response.data) {
-                setStatus({ type: "success", message: "Product created successfully! 🎉" });
-                reset();
+                setStatus({ type: "success", message: `Product ${initialData ? 'updated' : 'created'} successfully! 🎉` });
+                if (!initialData) reset();
                 if (onSuccess) onSuccess();
             }
         } catch (err) {
@@ -130,8 +146,8 @@ const Addproduct = ({ onSuccess }) => {
     return (
         <div className="w-full max-w-3xl mx-auto bg-background p-2 transition-colors duration-300">
             <div className="mb-8">
-                <h2 className="text-3xl font-bold text-foreground tracking-tight">New Product</h2>
-                <p className="text-muted-foreground text-sm mt-1">Add a new digital product or service to the catalog.</p>
+                <h2 className="text-3xl font-bold text-foreground tracking-tight">{initialData ? 'Edit Product' : 'New Product'}</h2>
+                <p className="text-muted-foreground text-sm mt-1">{initialData ? 'Update the catalog entry attributes below.' : 'Add a new digital product or service to the catalog.'}</p>
             </div>
 
             {status.message && (
@@ -261,9 +277,9 @@ const Addproduct = ({ onSuccess }) => {
                     ))}
                 </fieldset>
 
-                <Button type="submit" disabled={loading} className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-primary/20">
+                <Button type="submit" disabled={loading} className="w-full py-6 text-base font-bold rounded-xl shadow-lg shadow-indigo-500/20 bg-gradient-to-r from-indigo-600 to-primary text-white border-0 transition-all hover:scale-[1.01]">
                     {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : <Send className="mr-2" size={18} />}
-                    Publish Product to Catalog
+                    {initialData ? 'Publish Update to Catalog' : 'Publish Product to Catalog'}
                 </Button>
             </form>
         </div>

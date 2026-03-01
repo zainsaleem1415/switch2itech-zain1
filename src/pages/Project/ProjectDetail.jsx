@@ -487,8 +487,9 @@ const ModuleRow = ({ mod, projectId, milestoneId, canEdit, canAssign, allUsers, 
 };
 
 // ── Main Component ────────────────────────────────────────────────────────────
-const ProjectDetail = () => {
-    const { id } = useParams();
+const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
+    const { id: paramId } = useParams();
+    const id = projectIdFromProps || paramId;
     const navigate = useNavigate();
     const { user, role } = useAuth();
 
@@ -632,7 +633,10 @@ const ProjectDetail = () => {
 
                 {/* Back button */}
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => {
+                        if (onBackFromProps) onBackFromProps();
+                        else navigate(-1);
+                    }}
                     className="absolute top-4 left-6 flex items-center gap-2 text-white/90 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-xl text-sm font-semibold transition-all"
                 >
                     <ArrowLeft size={16} /> Back
