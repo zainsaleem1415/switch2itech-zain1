@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import productService from "../../api/productService";
+import { toast } from 'react-hot-toast';
 import {
   Package, Users, Edit3, Trash2, Plus,
   Search, Filter, MoreVertical, AlertCircle,
@@ -45,7 +46,7 @@ const Productpage = () => {
         setProducts(products.filter(p => p._id !== id));
       } catch (err) {
         console.error("Failed to delete product:", err);
-        alert("Failed to delete product.");
+        toast.error("Failed to delete product.");
       }
     }
   };
