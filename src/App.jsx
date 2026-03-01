@@ -8,6 +8,8 @@ import Layout from './components/Layout/Layout';
 import ProtectedRoutes from './components/ProtectedRoutes';
 import RequestAuth from './components/RequestAuth';
 import { RoleGuard } from './context/ContextProvider';
+import { Toaster, ToastBar, toast } from 'react-hot-toast';
+import { X } from 'lucide-react';
 
 // Lazy-loaded page components — each gets its own JS chunk.
 // The browser only downloads a page's code when the user first navigates to it.
@@ -73,6 +75,31 @@ const App = () => {
 
   return (
     <Suspense fallback={<PageSkeleton />}>
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }}>
+        {(t) => (
+          <ToastBar toast={t} style={{ padding: 0, background: 'transparent', boxShadow: 'none' }}>
+            {({ icon, message }) => (
+              <div className="relative overflow-hidden flex items-center gap-3 px-5 py-3.5 bg-white dark:bg-black text-slate-900 dark:text-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] border border-slate-200 dark:border-white/10 pointer-events-auto">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/0 dark:from-white/5 dark:to-white/0 pointer-events-none" />
+                <div className="relative z-10 flex items-center shadow-sm rounded-full shrink-0">
+                  {icon}
+                </div>
+                <div className="relative z-10 text-sm font-extrabold tracking-tight leading-snug">
+                  {message}
+                </div>
+                {t.type !== 'loading' && (
+                  <button
+                    onClick={() => toast.dismiss(t.id)}
+                    className="relative z-10 ml-2 p-1.5 rounded-full text-slate-400 hover:text-slate-900 dark:text-white/40 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all shrink-0"
+                  >
+                    <X size={14} strokeWidth={3} />
+                  </button>
+                )}
+              </div>
+            )}
+          </ToastBar>
+        )}
+      </Toaster>
       <Routes>
         {/* ── PROTECTED ROUTES ─────────────────────────────────────────── */}
         <Route element={<ProtectedRoutes />}>

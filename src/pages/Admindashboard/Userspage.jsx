@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"
 import userService from "../../api/userService"
+import { toast } from 'react-hot-toast';
 import {
   Users, UserCheck, UserPlus, Search,
   Trash2, Edit, Shield, Mail, CheckCircle2, XCircle, Download, Check
@@ -53,7 +54,7 @@ const Userspage = () => {
   const handleDelete = async (userId) => {
     // Currently we don't have a delete tool in the API docs for users, so simulate or implement if available
     console.warn("Delete user is not explicitly outlined in API docs, usually requires admin privileges.");
-    alert("Delete functionality pending API support.");
+    toast.error("Delete functionality pending API support.");
   };
 
   const stats = [
@@ -144,7 +145,7 @@ const Userspage = () => {
               {loading && filtered.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground font-bold">
-                   {/* <Loader2 className="animate-spin inline mr-2" size={16} /> Loading Directory...*/}
+                    {/* <Loader2 className="animate-spin inline mr-2" size={16} /> Loading Directory...*/}
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (

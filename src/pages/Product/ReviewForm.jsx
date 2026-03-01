@@ -1,5 +1,6 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { toast } from 'react-hot-toast';
 import { X, Star, Loader2 } from "lucide-react";
 import testimonialService from "../../api/testimonialService";
 
@@ -21,11 +22,11 @@ export function ReviewForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!productId) {
-      alert("Product ID is missing. Please reopen this product and try again.");
+      toast.error("Product ID is missing. Please reopen this product and try again.");
       return;
     }
     if (rating === 0) {
-      alert("Please select a rating.");
+      toast.error("Please select a rating.");
       return;
     }
 
@@ -48,7 +49,7 @@ export function ReviewForm({
       setComment("");
       onOpenChange(false);
       onSubmitted?.(response?.data?.data || null);
-      alert("Thank you for your review!");
+      toast.success("Thank you for your review!");
     } catch (error) {
       console.error("Failed to submit review", error);
       const message =
@@ -56,7 +57,7 @@ export function ReviewForm({
         error?.response?.data?.error ||
         error?.message ||
         "Failed to submit review. It may require approval or you might need to try again.";
-      alert(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

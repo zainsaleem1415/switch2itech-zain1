@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import projectService from '../../api/projectService';
+import { toast } from 'react-hot-toast';
 import userService from '../../api/userService';
 import {
   Loader2, ArrowLeft, ChevronDown, ChevronRight, CheckCircle2, Clock,
@@ -147,7 +148,7 @@ const ProjectMonitoring = ({ project, onBack }) => {
       closeModal();
     } catch (err) {
       console.error(`Action failed:`, err);
-      alert(err.response?.data?.message || "Operation failed");
+      toast.error(err.response?.data?.message || "Operation failed");
     } finally {
       setFormLoading(false);
     }

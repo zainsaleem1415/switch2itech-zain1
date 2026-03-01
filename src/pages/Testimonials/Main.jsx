@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import testimonialService from "../../api/testimonialService";
+import { toast } from 'react-hot-toast';
 import {
   Pencil,
   Star,
@@ -52,7 +53,7 @@ const Main = () => {
         setTestimonials(testimonials.filter((t) => t._id !== id));
       } catch (error) {
         console.error(error);
-        alert("Failed to delete");
+        toast.error("Failed to delete");
       }
     }
   };

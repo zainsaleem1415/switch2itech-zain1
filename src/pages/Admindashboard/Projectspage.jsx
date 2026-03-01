@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import projectService from "../../api/projectService";
+import { toast } from 'react-hot-toast';
 import userService from "../../api/userService";
 import {
   Search, Plus, Code, ExternalLink, Loader2,
@@ -82,7 +83,7 @@ const Projects = () => {
       setProjects(projects.filter(p => p._id !== id));
     } catch (err) {
       console.error("Failed to delete project:", err);
-      alert("Failed to delete project");
+      toast.error("Failed to delete project");
     }
   };
 
