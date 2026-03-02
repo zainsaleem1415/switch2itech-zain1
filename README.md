@@ -101,6 +101,7 @@ docker rm -f switch2itech-frontend
 - If port `5173` or `8080` is busy, change host port in run command (example `-p 3000:80`).
 - If Docker build fails with `Cannot find module @rollup/rollup-linux-*`, make sure latest `Dockerfile` is deployed and rebuild with `--no-cache`.
 - If production still uses old API URL, force a fresh image build (no cache) because Vite env is embedded at build time.
+- If refreshing a frontend route shows Nginx 404, redeploy latest image (it includes SPA fallback via `nginx.conf`).
 - If Docker build looks stale, rebuild without cache:
 
 ```bash
