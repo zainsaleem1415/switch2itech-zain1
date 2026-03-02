@@ -3,7 +3,8 @@ WORKDIR /app
 
 # Install dependencies using lockfile for reproducible builds
 COPY package.json package-lock.json ./
-RUN npm ci --include=optional
+RUN npm ci --include=optional \
+    && npm install --no-save --no-package-lock @rollup/rollup-linux-x64-gnu@4.57.1
 
 FROM node:20-slim AS builder
 WORKDIR /app

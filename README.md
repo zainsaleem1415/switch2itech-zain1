@@ -91,7 +91,7 @@ docker rm -f switch2itech-frontend
 
 - If `npm install` fails, confirm Node version with `node -v` (must be `20+`).
 - If port `5173` or `8080` is busy, change host port in run command (example `-p 3000:80`).
-- If Docker build fails with `Cannot find module @rollup/rollup-linux-*`, pull latest code and rebuild with `--no-cache` to refresh dependency layers.
+- If Docker build fails with `Cannot find module @rollup/rollup-linux-*`, make sure latest `Dockerfile` is deployed and rebuild with `--no-cache`.
 - If Docker build looks stale, rebuild without cache:
 
 ```bash
