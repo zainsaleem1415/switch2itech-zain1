@@ -36,6 +36,12 @@ http://localhost:5173
 - `npm run preview` - preview production build locally
 - `npm run lint` - run ESLint checks
 
+## Environment Variables
+
+- `VITE_API_URL` is a Vite variable, so it is injected at **build time**.
+- For local development, keep it in `.env`.
+- For Docker/production builds, pass it as a Docker build argument.
+
 ## Run with Docker (Production)
 
 The project includes:
@@ -46,8 +52,10 @@ The project includes:
 ### 1) Build Docker image
 
 ```bash
-docker build -t switch2itech-frontend .
+docker build --build-arg VITE_API_URL=https://your-api-domain.com/api -t switch2itech-frontend .
 ```
+
+If you do not pass this argument, default is `/api`.
 
 ### 2) Run container
 
@@ -92,8 +100,9 @@ docker rm -f switch2itech-frontend
 - If `npm install` fails, confirm Node version with `node -v` (must be `20+`).
 - If port `5173` or `8080` is busy, change host port in run command (example `-p 3000:80`).
 - If Docker build fails with `Cannot find module @rollup/rollup-linux-*`, make sure latest `Dockerfile` is deployed and rebuild with `--no-cache`.
+- If production still uses old API URL, force a fresh image build (no cache) because Vite env is embedded at build time.
 - If Docker build looks stale, rebuild without cache:
 
 ```bash
-docker build --no-cache -t switch2itech-frontend .
+docker build --no-cache --build-arg VITE_API_URL=https://your-api-domain.com/api -t switch2itech-frontend .
 ```
