@@ -106,6 +106,7 @@ docker rm -f switch2itech-frontend
 - If production still uses old API URL, force a fresh image build (no cache) because Vite env is embedded at build time.
 - If refreshing a frontend route shows Nginx 404, redeploy latest image (it includes SPA fallback via `nginx.conf`).
 - If login returns `405 Method Not Allowed` on `/api/*`, set `API_PROXY_URL` in deployment runtime env to your backend domain (without `/api` suffix).
+- If you get `502 Bad Gateway`, verify `API_PROXY_URL` is reachable from the frontend container and is not the same frontend domain.
 - If Docker build looks stale, rebuild without cache:
 
 ```bash
