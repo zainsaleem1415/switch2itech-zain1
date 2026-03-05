@@ -8,6 +8,7 @@ import {
   LayoutDashboard, Briefcase, Users, BarChart3,
   MessageSquare, Package, LifeBuoy, LogOut,
   PanelLeftClose, PanelLeftOpen, Loader2,
+  Settings, ShieldCheck, DollarSign, Star,
 } from "lucide-react";
 import { useAuth } from "../../context/ContextProvider";
 import authService from "../../api/authService";
@@ -72,6 +73,15 @@ const MAIN_MENU = [
   { icon: BarChart3, label: "Analytics", path: "/analytics", roles: ["admin"] },
   { icon: MessageSquare, label: "Testimonials", path: "/testimonials", roles: ["admin", "manager", "developer", "client", "user"] },
   { icon: Package, label: "Products", path: "/products", roles: ["admin", "manager", "developer", "client", "user"] },
+];
+
+const ADMIN_MENU = [
+  { icon: Briefcase, label: "Manage Projects", path: "/admin/projects" },
+  { icon: Package, label: "Manage Products", path: "/admin/products" },
+  { icon: Users, label: "Manage Users", path: "/admin/users" },
+  { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: Star, label: "Testimonials", path: "/admin/testimonials" },
+  { icon: DollarSign, label: "Revenue", path: "/admin/revenue" },
 ];
 
 const SYSTEM_MENU = [{ icon: LifeBuoy, label: "Support", path: "/support" }];
@@ -162,6 +172,22 @@ const Sidebar = () => {
               ))}
             </div>
           </div>
+
+          {role === "admin" && (
+            <div>
+              {!isCollapsed && (
+                <p className="px-3.5 mb-2 text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.18em] flex items-center gap-1.5">
+                  <ShieldCheck size={10} className="text-primary opacity-70" />
+                  Management
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {ADMIN_MENU.map((item) => (
+                  <NavItem key={item.path} item={item} isCollapsed={isCollapsed} />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             {!isCollapsed && (

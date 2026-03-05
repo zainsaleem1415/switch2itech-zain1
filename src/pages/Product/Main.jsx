@@ -16,6 +16,8 @@ import { FeatureCard } from "./FeatureCard";
 import { ReviewCard } from "./ReviewCard";
 import { ReviewForm } from "./ReviewForm";
 import testimonialService from "../../api/testimonialService";
+import productService from "../../api/productService";
+import { useParams, useNavigate } from "react-router-dom";
 
 const formatReviewDate = (value) => {
   if (!value) return "Recently";
@@ -54,14 +56,36 @@ const fetchProductReviews = async (product) => {
     .map((review) => mapReviewForCard(review, product));
 };
 
-export default function App({ product, onBack }) {
-  const productId = resolveProductId(product);
+export default function App({ product: propProduct, onBack }) {
+  const { id: paramId } = useParams();
+  const navigate = useNavigate();
+
+  const [product, setProduct] = useState(propProduct || null);
+  const [loading, setLoading] = useState(!propProduct && !!paramId);
+
+  const productId = resolveProductId(product) || paramId;
   const [quantity, setQuantity] = useState(1);
   const [reviewFormOpen, setReviewFormOpen] = useState(false);
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
-    if (!productId) return;
+    if (!propProduct && paramId) {
+      let isMounted = true;
+      setLoading(true);
+      productService.getProductById(paramId)
+        .then((res) => {
+          if (isMounted) setProduct(res.data?.data);
+        })
+        .catch(err => console.error("Failed to fetch product for details page", err))
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+      return () => { isMounted = false; };
+    }
+  }, [propProduct, paramId]);
+
+  useEffect(() => {
+    if (!productId || !product) return;
     let ignore = false;
 
     fetchProductReviews(product)
@@ -77,6 +101,29 @@ export default function App({ product, onBack }) {
       ignore = true;
     };
   }, [product, productId]);
+
+  const handleBack = () => {
+    if (onBack) onBack();
+    else navigate(-1);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-muted-foreground font-semibold tracking-widest uppercase">Loading Asset...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground font-semibold">Asset not found.</p>
+        <button onClick={handleBack} className="text-primary hover:underline">Go Back</button>
+      </div>
+    );
+  }
 
   // --- MAPPING SCHEMA DATA ---
   const productImages =
@@ -135,7 +182,7 @@ export default function App({ product, onBack }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={onBack}
+                onClick={handleBack}
                 className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-foreground transition-colors hover:bg-muted"
               >
                 <ArrowLeft className="h-5 w-5" />

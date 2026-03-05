@@ -6,8 +6,11 @@ import {
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
+import { Link } from "react-router-dom"
+import { useAuth } from "../../context/ContextProvider"
 
 const Userspage = () => {
+  const { role } = useAuth()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -46,7 +49,7 @@ const Userspage = () => {
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-8 space-y-8 animate-in fade-in duration-400">
-      
+
       {/* Header Section */}
       <div className="relative rounded-2xl overflow-hidden border border-border/40 bg-card">
         <div className="relative px-8 py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -57,12 +60,16 @@ const Userspage = () => {
             <h1 className="text-3xl font-extrabold tracking-tight">Client Management</h1>
             <p className="text-sm text-muted-foreground mt-1">Client information directory.</p>
           </div>
-          <Button className="rounded-xl font-bold gap-2 shadow-lg shadow-primary/20" disabled>
-            <UserPlus size={18} /> Client Only View
-          </Button>
+          {role === "admin" && (
+            <Link
+              to="/admin/users"
+              className="h-11 px-5 font-bold rounded-xl border border-violet-500/30 text-violet-600 bg-violet-500/5 hover:bg-violet-500/10 flex items-center gap-2 text-sm transition-colors"
+            >
+              <Shield size={14} /> Manage Users
+            </Link>
+          )}
         </div>
       </div>
-
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s, i) => (
@@ -81,8 +88,8 @@ const Userspage = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-5 border-b border-border/40">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-            <Input 
-              placeholder="Search by name, email, or company..." 
+            <Input
+              placeholder="Search by name, email, or company..."
               className="pl-9 h-11 rounded-xl bg-muted/30 border-none"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -120,7 +127,7 @@ const Userspage = () => {
                   </td>
                   <td className="px-6 py-4">
                     <Badge className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-md border ${user.status === "Inactive" ? "bg-red-500/10 text-red-600 border-red-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
-                       {user.status || "Active"}
+                      {user.status || "Active"}
                     </Badge>
                   </td>
                 </tr>

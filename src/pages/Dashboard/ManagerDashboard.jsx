@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { useAuth } from '../../context/ContextProvider';
 import projectService from '../../api/projectService';
 import userService from '../../api/userService';
+import { getDisplayProgress } from '../../utils/projectProgress';
 
 const statusBadge = (status) => {
     const map = {
@@ -243,7 +244,7 @@ const ManagerDashboard = () => {
 
                 <div className="space-y-3">
                     {filtered.map(project => {
-                        const progress = project.progress || 0;
+                        const progress = getDisplayProgress(project);
                         const isExpanded = expandedProject === project._id;
                         const projectMilestones = milestones[project._id] || [];
 

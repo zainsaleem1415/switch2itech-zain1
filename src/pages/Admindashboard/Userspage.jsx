@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import userService from "../../api/userService"
 import { toast } from 'react-hot-toast';
 import {
   Users, UserCheck, UserPlus, Search,
-  Trash2, Edit, Shield, Mail, CheckCircle2, XCircle, Download, Check
+  Trash2, Edit, Shield, Mail, CheckCircle2, XCircle, Download, Check, ArrowLeft
 } from "lucide-react"
 import { Badge } from "../../components/ui/badge"
 import { Button } from "../../components/ui/button"
@@ -79,6 +80,10 @@ const Userspage = () => {
         <div className="relative px-8 py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
+              <Link to="/" className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-muted-foreground hover:bg-muted hover:text-foreground text-[10px] font-black uppercase tracking-widest transition-colors">
+                <ArrowLeft size={12} />
+                Dashboard
+              </Link>
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-600 text-[10px] font-black uppercase tracking-widest">
                 <Shield size={12} />
                 Access Control
@@ -99,7 +104,6 @@ const Userspage = () => {
           </div>
         </div>
       </div>
-
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s, i) => (

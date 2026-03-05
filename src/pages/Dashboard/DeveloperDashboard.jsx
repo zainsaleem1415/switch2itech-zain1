@@ -11,6 +11,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../context/ContextProvider';
 import projectService from '../../api/projectService';
+import { getDisplayProgress } from '../../utils/projectProgress';
 
 const statusBadge = (status) => {
     const map = {
@@ -227,7 +228,7 @@ const DeveloperDashboard = () => {
 
                 <div className="space-y-3">
                     {projects.map(project => {
-                        const progress = project.progress || 0;
+                        const progress = getDisplayProgress(project);
                         const isExpanded = expandedProject === project._id;
                         const msList = milestonesMap[project._id] || [];
                         const myTasks = tasksMap[project._id] || [];

@@ -8,8 +8,11 @@ import {
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
 import { Badge } from "../../components/ui/badge"
+import { Link } from "react-router-dom"
+import { useAuth } from "../../context/ContextProvider"
 
 const Testimonialspage = () => {
+  const { role } = useAuth()
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("All")
@@ -68,6 +71,14 @@ const Testimonialspage = () => {
               Curate, moderate, and publish client feedback to feature on the main landing pages.
             </p>
           </div>
+          {role === "admin" && (
+            <Link
+              to="/admin/testimonials"
+              className="h-11 px-5 font-bold rounded-xl border border-amber-500/30 text-amber-600 bg-amber-500/5 hover:bg-amber-500/10 flex items-center gap-2 text-sm transition-colors shrink-0"
+            >
+              <Star size={14} /> Manage Testimonials
+            </Link>
+          )}
         </div>
       </div>
 

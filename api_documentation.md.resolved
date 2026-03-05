@@ -1,109 +1,176 @@
-# Switch2itech Backend API Documentation
+# Full Platform API & Schema Documentation
 
-This document outlines the available API endpoints for the Switch2itech backend.
-
-## Base URL
-`http://localhost:5000/api` (or regulated by environment variables)
+This document outlines the Database Schemas (Models) and the RESTful API Endpoints available for the Switch2iTech frontend application.
 
 ---
 
-## 🔐 Authentication (`/auth`)
+## 🏗️ 1. Database Schemas (Models)
 
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| POST | `/register` | Register a new user | No | - |
-| POST | `/login` | Login and receive HttpOnly cookie | No | - |
-| POST | `/logout` | Logout and clear cookie | No | - |
-| GET | `/me` | Get current authenticated user details | Yes | Any |
+### 1.1 User ([/models/user.js](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/models/user.js))
+Role-based user model managing auth and profile details.
+* `_id`: ObjectId
+* `name`: String (Required)
+* `email`: String (Required, Unique)
+* `password`: String (Hashed)
+* `profile`: String (Cloudinary URL)
+* `role`: Enum `["user", "admin", "client", "developer", "manager"]` (Default: "user")
+* `phoneNo`, `company`, `address`: String
+* `assignedProjects`: Array of [Project](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/projectController.js#89-104) ObjectIds
+* `skills`: Array of Strings (For developers)
+* `isVerified`, `isEmailVerified`, `isPhoneVerified`: Boolean
+* `emailVerificationCode`, `phoneVerificationCode`: String
+* `verificationCodeExpires`: Date
+* `loginOtp`: String
+* `loginOtpExpires`: Date
+* `lastLogin`: Date
+
+### 1.2 Project ([/models/project.js](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/models/project.js))
+High-level overview of a commissioned project.
+* `_id`: ObjectId
+* `title`: String (Required)
+* `description`: String
+* `coverImage`, `demoVideo`: String (Cloudinary paths)
+* `status`: Enum `["planning", "active", "on-hold", "in-review", "completed", "cancelled"]`
+* `priority`: Enum `["low", "medium", "high", "critical"]`
+* `clients`: Array of [User](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/userController.js#28-39) ObjectIds
+* `manager`: [User](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/userController.js#28-39) ObjectId
+* `teamMembers`: Array of [User](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/userController.js#28-39) ObjectIds (Developers)
+* `startDate`, `endDate`: Date
+* `budget`: Number, `currency`: String (Default: "USD")
+* `tags`: Array of Strings
+* `faqs`: Array of `{ question: String, answer: String }`
+
+### 1.3 Milestone ([/models/milestone.js](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/models/milestone.js))
+A sub-division of a Project (e.g., Sprint or Phase).
+* `_id`: ObjectId
+* `title`: String (Required)
+* `description`: String
+* `project`: [Project](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/projectController.js#89-104) ObjectId (Required)
+* `assignedTo`: [User](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/userController.js#28-39) ObjectId (Manager / Lead Developer)
+* `status`: Enum `["pending", "in-progress", "completed", "on-hold"]`
+* `startDate`, `dueDate`: Date
+* `order`: Number (Default: 0)
+
+### 1.4 Module ([/models/module.js](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/models/module.js))
+A major feature or logical component within a Milestone.
+* `_id`: ObjectId
+* `name`: String (Required)
+* `description`: String
+* `milestone`: [Milestone](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/projectController.js#192-203) ObjectId (Required)
+* `project`: [Project](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/projectController.js#89-104) ObjectId (Required)
+* `assignedTo`: [User](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/userController.js#28-39) ObjectId (Developer)
+* `status`: Enum `["pending", "in-progress", "in-review", "completed"]`
+* `dueDate`, `completedAt`: Date
+* `order`: Number (Default: 0)
+
+### 1.5 Task ([/models/task.js](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/models/task.js))
+Atomic work unit assigned to a developer.
+* `_id`: ObjectId
+* `title`: String (Required)
+* `description`: String
+* `module`: [Module](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/projectController.js#274-287) ObjectId (Required)
+* `milestone`, `project`: ObjectIds
+* `reporter`, `assignee`: [User](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/userController.js#28-39) ObjectIds
+* `status`: Enum `["todo", "in-progress", "in-review", "done", "blocked"]`
+* `priority`: Enum `["low", "medium", "high", "critical"]`
+* `dueDate`, `completedAt`: Date
+* `labels`: Array of Strings
+* `estimatedHours`, `loggedHours`: Number
+
+### 1.6 Product ([/models/product.js](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/models/product.js))
+Pre-built SaaS templates or tools available for purchase/view.
+* `_id`: ObjectId
+* `name`, `desc`, `category`: String (Required)
+* `clients`: Array of [User](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/userController.js#28-39) ObjectIds (Buyers)
+* `video`, `image`: Array of Strings (Cloudinary URLs)
+* `thumbnail`: String
+* `techStack`: Array of Strings
+* `faqs`: Array of `{ question: String, answer: String }`
+
+### 1.7 Testimonial ([/models/testimonial.js](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/models/testimonial.js))
+Reviews of Projects or Products.
+* `_id`: ObjectId
+* `author`: [User](file:///d:/Projects/switch2itech/switch2itechWeb/backend/switch2itech-backend/projects-backend/controllers/userController.js#28-39) ObjectId (Required)
+* `authorNameOverride`, `authorRoleOverride`, `authorCompanyOverride`, `authorAvatarOverride`: String
+* `title`, `content`: String
+* `rating`: Number (1-5, Default: 5)
+* `project`, `product`: ObjectIds (Reference target of review)
+* `isApproved`, `isFeatured`: Boolean
 
 ---
 
-## 👥 User Management (`/users`)
+## 🌐 2. API Endpoints
 
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/` | Get all users (Filter: `?role=`) | Yes | Admin, Manager |
-| GET | `/:id` | Get specific user profile | Yes | Any |
-| PATCH | `/:id` | Update user role | Yes | Admin |
+**Base URL**: `http://localhost:5000/api` 
 
----
+> **Authentication**
+> Most routes labeled "Private" require a valid JWT passed in as an `httpOnly` cookie (`jwt`). The cookie is set automatically upon login/register.
 
-## 🏗️ Project Management (`/projects`)
+### 2.1 Auth (`/api/auth`)
+* `POST /register`: Register a new user. Expects `name, email, password, [phoneNo, company, address, role]`.
+* `POST /login`: Log in via email/password. Expects `email, password`.
+* `POST /request-otp`: Request an OTP login code. Expects `identifier` (email or phone).
+* `POST /verify-otp-login`: Login using OTP. Expects `identifier, otp`.
+* `POST /verify-email`: (Private) Verify email post-registration. Expects `code`.
+* `POST /verify-phone`: (Private) Verify phone post-registration. Expects `code`.
+* `POST /logout`: (Private) Clears JWT cookie.
+* `GET /me`: (Private) Returns the logged-in user profile.
 
-### Projects
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/` | Get all projects | Yes | Any |
-| POST | `/` | Create project (Supports multipart: `coverImage`, `demoVideo`) | Yes | Admin, Manager |
-| GET | `/:id` | Get specific project details | Yes | Any |
-| PATCH | `/:id` | Update project details | Yes | Admin, Manager |
-| DELETE | `/:id` | Delete project | Yes | Admin |
-| PATCH | `/:id/assign` | Assign clients, manager, or team (Body: `{ clients, manager, teamMembers, action }`) | Yes | Admin |
+### 2.2 Users (`/api/users`)
+* `GET /`: (Admin) Get all users.
+* `GET /:id`: (Private) Get a user by ID.
+* `PUT /profile`: (Private) Update own profile. Accepts `name, phoneNo, company, address, skills, password, profile (file upload via Multer/Cloudinary)`.
+* `PATCH /:id/role`: (Admin) Update a specific user's role. Expects `role`.
 
-### Milestones
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/:projectId/milestones` | Get all milestones for a project | Yes | Any |
-| POST | `/:projectId/milestones` | Create a new milestone | Yes | Admin, Manager |
-| PATCH | `/:projectId/milestones/:milestoneId` | Update milestone | Yes | Admin, Manager |
-| DELETE | `/:projectId/milestones/:milestoneId` | Delete milestone | Yes | Admin |
-| PATCH | `/:projectId/milestones/:milestoneId/assign` | Assign milestone to user | Yes | Admin, Manager |
+### 2.3 Projects (`/api/projects`)
+* `GET /`: Get all projects (populated with clients, manager, teamMembers).
+* `GET /:id`: Get specific project details, including all its associated Milestones and Modules.
+* `POST /`: (Admin/Manager) Create project. Accepts `title, description, status, priority, budget, currency, tags[array], faqs[JSON array string], coverImage (file), demoVideo (file)`.
+* `PATCH /:id`: (Admin/Manager) Update project fields.
+* `DELETE /:id`: (Admin) Cascade deletes project, milestones, modules, and tasks.
+* **Assignments:**
+  * `PATCH /:id/assign`: (Admin) Assign stakeholders. Expects `{ clients: [ids], manager: id, teamMembers: [ids], action: "add"|"remove" }`.
+* **FAQs:**
+  * `POST /:id/faqs`: Add a project FAQ. Expects `{ question, answer }`.
+  * `PATCH /:id/faqs/:faqId`: Update project FAQ.
+  * `DELETE /:id/faqs/:faqId`: Delete project FAQ.
 
-### Modules
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/:projectId/milestones/:milestoneId/modules` | Get modules in a milestone | Yes | Any |
-| POST | `/:projectId/milestones/:milestoneId/modules` | Create module | Yes | Admin, Manager |
-| PATCH | `/:projectId/milestones/:milestoneId/modules/:moduleId` | Update module status/details | Yes | Admin, Manager, Developer |
-| PATCH | `/:projectId/milestones/:milestoneId/modules/:moduleId/assign` | Assign module to developer | Yes | Admin, Manager |
+### 2.4 Milestones (`/api/projects/:projectId/milestones`)
+* `GET /`: Get all milestones for a project.
+* `POST /`: (Admin/Manager) Create a milestone. Expects `title, description, status, startDate, dueDate`.
+* `PATCH /:milestoneId`: (Admin/Manager) Update milestone.
+* `DELETE /:milestoneId`: (Admin) Delete milestone (and cascade delete sub-modules/tasks).
+* **Assignments:**
+  * `PATCH /:milestoneId/assign`: (Admin/Manager) Expects `{ assignedTo: userId }`.
 
-### Tasks
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks` | Get tasks in a module | Yes | Any |
-| POST | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks` | Create task | Yes | Any |
-| PATCH | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks/:taskId` | Update task | Yes | Any |
-| DELETE | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks/:taskId` | Delete task | Yes | Admin, Manager |
-| PATCH | `/:projectId/milestones/:milestoneId/modules/:moduleId/tasks/:taskId/assign` | Assign task to developer | Yes | Admin, Manager |
+### 2.5 Modules (`/api/projects/:projectId/milestones/:milestoneId/modules`)
+* `GET /`: Get all modules for a milestone.
+* `POST /`: (Admin/Manager) Create module. Expects `name, description, status, dueDate`.
+* `PATCH /:moduleId`: (Admin/Manager/Developer) Update module.
+* **Assignments:**
+  * `PATCH /:moduleId/assign`: (Admin/Manager) Expects `{ assignedTo: userId }`.
 
-### Project FAQs
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| POST | `/:id/faqs` | Add FAQ to project | Yes | Admin, Manager |
-| PATCH | `/:id/faqs/:faqId` | Update FAQ | Yes | Admin, Manager |
-| DELETE | `/:id/faqs/:faqId` | Delete FAQ | Yes | Admin, Manager |
+### 2.6 Tasks (`/api/projects/:projectId/milestones/:milestoneId/modules/:moduleId/tasks`)
+* `GET /`: Get all tasks within a specific module.
+* `POST /`: Create a task. Expects `title, description, status, priority, dueDate, labels, estimatedHours`.
+* `PATCH /:taskId`: Update a task. (Status updates automatically trigger notifications).
+* `DELETE /:taskId`: (Admin/Manager) Delete task.
+* **Assignments:**
+  * `PATCH /:taskId/assign`: (Admin/Manager) Expects `{ assignee: userId }`.
 
----
+### 2.7 Products (`/api/products`)
+* `GET /`: List all products.
+* `GET /:id`: Get specific product.
+* `POST /`: (Admin) Create product. Accepts `name, desc, category, techStack, image (up to 5 files), video (up to 2 files), thumbnail (1 file)`.
+* `PUT /:id`: (Admin) Update product details/images.
+* `DELETE /:id`: (Admin) Remove product.
+* **FAQs:**
+  * `POST /:id/faqs`, `PATCH /:id/faqs/:faqId`, `DELETE /:id/faqs/:faqId` (Admin).
 
-## 📦 Product Management (`/products`)
-
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/` | Get all products | No | - |
-| GET | `/:id` | Get specific product | No | - |
-| POST | `/` | Create product (Multipart: `image`, `video`, `thumbnail`) | Yes | Admin |
-| PUT | `/:id` | Update product | Yes | Admin |
-| DELETE | `/:id` | Delete product | Yes | Admin |
-| POST | `/:id/faqs` | Add FAQ | Yes | Admin |
-| PATCH | `/:id/faqs/:faqId` | Update FAQ | Yes | Admin |
-| DELETE | `/:id/faqs/:faqId` | Delete FAQ | Yes | Admin |
-
----
-
-## 💬 Testimonials (`/testimonials`)
-
-| Method | Endpoint | Description | Auth Required | Role |
-| :--- | :--- | :--- | :--- | :--- |
-| GET | `/` | List testimonials (`?approved=true`, `?project=`, `?product=`) | No | - |
-| GET | `/:id` | Get single testimonial | No | - |
-| POST | `/` | Submit a new testimonial/review | Yes | Any |
-| PATCH | `/:id` | Edit own testimonial or any if admin | Yes | Owner, Admin |
-| PATCH | `/:id/approve` | Approve/feature a testimonial | Yes | Admin |
-| DELETE | `/:id` | Remove testimonial | Yes | Admin |
-
----
-
-## 🩺 System
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- |
-| GET | `/health` | Backend status check | No |
+### 2.8 Testimonials (`/api/testimonials`)
+* `GET /`: List testimonials. Supports queries like `?approved=true`, `?project=<id>`, `?product=<id>`.
+* `GET /:id`: Get single testimonial.
+* `POST /`: (Private) Submit a review. Expects `content, rating, [title, project, product, overrides...]`.
+* `PATCH /:id`: (Private) Update own testimonial.
+* `PATCH /:id/approve`: (Admin) Approve/Feature a testimonial (`isApproved, isFeatured`).
+* `DELETE /:id`: (Admin) Delete testimonial.

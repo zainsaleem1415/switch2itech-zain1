@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import projectService from "../../api/projectService";
 import productService from "../../api/productService";
 import userService from "../../api/userService";
 import testimonialService from "../../api/testimonialService";
 import {
   Monitor, Package, Users, Star,
-  CircleDollarSign, ArrowUpRight, ArrowLeft, Loader2,
+  CircleDollarSign, ArrowUpRight, Loader2,
   LayoutDashboard, Sparkles,
 } from "lucide-react";
-import ProjectPage from "../Admindashboard/Projectspage";
-import Productpage from "../Admindashboard/Productpage";
-import Userspage from "../Admindashboard/Userspage";
-import Testimonialspage from "../Admindashboard/Testimonialspage";
-import Revenuepage from "../Admindashboard/Revenuepage";
 
 const STAT_CONFIG = [
   {
@@ -25,6 +21,7 @@ const STAT_CONFIG = [
     ring: "ring-blue-500/20",
     badge: "bg-blue-500/10 text-blue-600",
     bar: "bg-gradient-to-r from-blue-400 to-blue-600",
+    path: "/admin/projects"
   },
   {
     id: "products",
@@ -36,6 +33,7 @@ const STAT_CONFIG = [
     ring: "ring-violet-500/20",
     badge: "bg-violet-500/10 text-violet-600",
     bar: "bg-gradient-to-r from-violet-400 to-purple-600",
+    path: "/admin/products"
   },
   {
     id: "users",
@@ -47,6 +45,7 @@ const STAT_CONFIG = [
     ring: "ring-orange-500/20",
     badge: "bg-orange-500/10 text-orange-600",
     bar: "bg-gradient-to-r from-orange-400 to-amber-500",
+    path: "/admin/users"
   },
   {
     id: "testimonials",
@@ -58,6 +57,7 @@ const STAT_CONFIG = [
     ring: "ring-amber-400/20",
     badge: "bg-amber-400/10 text-amber-600",
     bar: "bg-gradient-to-r from-amber-300 to-yellow-500",
+    path: "/admin/testimonials"
   },
   {
     id: "revenue",
@@ -69,10 +69,12 @@ const STAT_CONFIG = [
     ring: "ring-emerald-500/20",
     badge: "bg-emerald-500/10 text-emerald-600",
     bar: "bg-gradient-to-r from-emerald-400 to-teal-500",
+    path: "/admin/revenue"
   },
 ];
 
-const Top = ({ currentView, setCurrentView }) => {
+const Top = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState({ projects: 0, products: 0, users: 0, testimonials: 0, revenue: 0 });
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
@@ -106,40 +108,14 @@ const Top = ({ currentView, setCurrentView }) => {
         setLoading(false);
       }
     };
-    if (currentView === "overview") fetchDashboardData();
-  }, [currentView]);
+    fetchDashboardData();
+  }, []);
 
   const getValue = (id) => {
     if (loading) return "···";
     if (id === "revenue") return `$${data.revenue.toLocaleString()}`;
     return data[id];
   };
-
-  const BackButton = () => (
-    <button
-      onClick={() => setCurrentView("overview")}
-      className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:opacity-80 transition-opacity mb-6 group"
-    >
-      <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-        <ArrowLeft size={14} />
-      </span>
-      Back to Dashboard
-    </button>
-  );
-
-  const renderView = () => {
-    const views = { projects: ProjectPage, products: Productpage, users: Userspage, testimonials: Testimonialspage, revenue: Revenuepage };
-    const View = views[currentView];
-    return View ? <><BackButton /><View /></> : null;
-  };
-
-  if (currentView !== "overview") {
-    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
-        {renderView()}
-      </div>
-    );
-  }
 
   const greeting = now.getHours() < 12 ? "Good Morning" : now.getHours() < 17 ? "Good Afternoon" : "Good Evening";
   const dateStr = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -184,7 +160,7 @@ const Top = ({ currentView, setCurrentView }) => {
         {STAT_CONFIG.map((stat) => (
           <button
             key={stat.id}
-            onClick={() => setCurrentView(stat.id)}
+            onClick={() => navigate(stat.path)}
             className={`metric-card text-left group cursor-pointer ring-1 ${stat.ring} hover:shadow-xl ${stat.glow}`}
           >
             {/* Icon */}

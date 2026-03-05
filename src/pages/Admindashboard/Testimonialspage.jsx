@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import testimonialService from "../../api/testimonialService"
 import {
   Star, MessageSquare, Clock, Award, Search,
   Trash2, Eye, ThumbsUp, CheckCircle2,
-  Loader2, Globe
+  Loader2, Globe, ArrowLeft
 } from "lucide-react"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
@@ -85,6 +86,10 @@ const Testimonialspage = () => {
         <div className="relative px-8 py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
+              <Link to="/" className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-muted-foreground hover:bg-muted hover:text-foreground text-[10px] font-black uppercase tracking-widest transition-colors">
+                <ArrowLeft size={12} />
+                Dashboard
+              </Link>
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 text-[10px] font-black uppercase tracking-widest">
                 <Globe size={12} />
                 Public Relations
@@ -102,7 +107,6 @@ const Testimonialspage = () => {
           </div>
         </div>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {stats.map((s, i) => (

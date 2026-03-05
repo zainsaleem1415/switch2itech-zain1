@@ -16,14 +16,16 @@ import { X } from 'lucide-react';
 const Overview = lazy(() => import('./pages/Admin/Overview'));
 const Team = lazy(() => import('./pages/Team/Team'));
 const Notifications = lazy(() => import('./pages/Notifications/Notifications'));
-const Profile = lazy(() => import('./pages/Profile/Profile'));
 const Project = lazy(() => import('./pages/Project/Product'));
 const Client = lazy(() => import('./pages/Client/Client'));
 const Testimonials = lazy(() => import('./pages/Testimonials/Testimonials'));
 const Addproject = lazy(() => import('./pages/Addproject/Addproject'));
+const Editproject = lazy(() => import('./pages/Addproject/Editproject'));
+const ProjectMonitoring = lazy(() => import('./pages/Admindashboard/ProjectMonitoring'));
 const Addproduct = lazy(() => import('./pages/Addproduct/Addproduct'));
 const Analytics = lazy(() => import('./pages/Analytics/Analytics'));
 const Product = lazy(() => import('./pages/Product/Product'));
+const ProductDetail = lazy(() => import('./pages/Product/Main'));
 const ProjectDetail = lazy(() => import('./pages/Project/ProjectDetail'));
 const Support = lazy(() => import('./pages/Support/Support'));
 const Signin = lazy(() => import('./pages/Signin/Signin'));
@@ -113,8 +115,15 @@ const App = () => {
 
             {/* Admin Management only */}
             <Route path="admin/projects" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><AdminProjects /></RoleGuard>} />
+            {/* Admin Projects & related deep links */}
+            <Route path="admin/projects/new" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><Addproject /></RoleGuard>} />
+            <Route path="admin/projects/:id" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><ProjectDetail isAdmin /></RoleGuard>} />
+            <Route path="admin/projects/:id/edit" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><Editproject /></RoleGuard>} />
+            <Route path="admin/projects/:id/monitor" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><ProjectMonitoring /></RoleGuard>} />
             <Route path="admin/users" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><AdminUsers /></RoleGuard>} />
             <Route path="admin/products" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><AdminProducts /></RoleGuard>} />
+            <Route path="admin/products/:id" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><ProductDetail isAdmin /></RoleGuard>} />
+            <Route path="admin/products/:id/edit" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><Addproduct /></RoleGuard>} />
             <Route path="admin/testimonials" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><AdminTestimonials /></RoleGuard>} />
             <Route path="admin/revenue" element={<RoleGuard allowedRoles={["admin"]} fallback={<Navigate to="/" />}><AdminRevenue /></RoleGuard>} />
 
@@ -150,6 +159,14 @@ const App = () => {
               element={
                 <RoleGuard allowedRoles={["admin", "manager", "developer"]} fallback={<NotFound />}>
                   <ProjectDetail />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="products/:id"
+              element={
+                <RoleGuard allowedRoles={["admin", "manager", "developer", "user"]} fallback={<NotFound />}>
+                  <ProductDetail />
                 </RoleGuard>
               }
             />

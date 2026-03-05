@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../context/ContextProvider';
 import projectService from '../../api/projectService';
 import userService from '../../api/userService';
+import { computeProjectProgress, computeMilestoneWeight } from '../../utils/projectProgress';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const statusColors = {
@@ -131,7 +132,9 @@ const SectionHeader = ({ icon, title, action }) => (
 );
 
 // ── Milestone Card ────────────────────────────────────────────────────────────
-const MilestoneCard = ({ ms, projectId, canEdit, canAssign, allUsers, onUpdated }) => {
+// onUpdated(updatedMs?)  — called after any status/assignment change
+// onModulesChanged(msId, modules) — informs parent of loaded/updated modules
+const MilestoneCard = ({ ms, projectId, canEdit, canAssign, allUsers, onUpdated, onModulesChanged }) => {
     const [expanded, setExpanded] = useState(false);
     const [modules, setModules] = useState([]);
     const [loadingModules, setLoadingModules] = useState(false);
@@ -146,15 +149,17 @@ const MilestoneCard = ({ ms, projectId, canEdit, canAssign, allUsers, onUpdated 
     const [assignDlg, setAssignDlg] = useState(false);
     const [assignUser, setAssignUser] = useState(ms.assignedTo?._id || ms.assignedTo || '');
 
-    const loadModules = useCallback(async () => {
-        if (modules.length > 0) return;
+    const loadModules = useCallback(async (forceReload = false) => {
+        if (modules.length > 0 && !forceReload) return;
         setLoadingModules(true);
         try {
             const res = await projectService.getModules(projectId, ms._id);
-            setModules(res.data?.data || []);
+            const loaded = res.data?.data || [];
+            setModules(loaded);
+            onModulesChanged?.(ms._id, loaded);
         } catch { setModules([]); }
         finally { setLoadingModules(false); }
-    }, [projectId, ms._id, modules.length]);
+    }, [projectId, ms._id, modules.length, onModulesChanged, ms._id]);
 
     const toggle = () => {
         setExpanded(p => !p);
@@ -164,7 +169,8 @@ const MilestoneCard = ({ ms, projectId, canEdit, canAssign, allUsers, onUpdated 
     const saveStatus = async () => {
         try {
             await projectService.updateMilestone(projectId, ms._id, { status: newStatus });
-            onUpdated();
+            // Optimistically report updated milestone status to parent
+            onUpdated({ ...ms, status: newStatus });
             setEditStatus(false);
         } catch (e) { console.error(e); }
     };
@@ -181,7 +187,9 @@ const MilestoneCard = ({ ms, projectId, canEdit, canAssign, allUsers, onUpdated 
         try {
             await projectService.createModule(projectId, ms._id, modForm);
             const res = await projectService.getModules(projectId, ms._id);
-            setModules(res.data?.data || []);
+            const fresh = res.data?.data || [];
+            setModules(fresh);
+            onModulesChanged?.(ms._id, fresh);
             setAddModDlg(false);
             setModForm({ name: '', description: '', status: 'pending', dueDate: '' });
         } catch (e) { console.error(e); }
@@ -204,6 +212,21 @@ const MilestoneCard = ({ ms, projectId, canEdit, canAssign, allUsers, onUpdated 
                         )}
                     </div>
                     {ms.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{ms.description}</p>}
+                    {/* Milestone progress bar — computed from loaded modules */}
+                    {(() => {
+                        const msPct = Math.round(computeMilestoneWeight(ms, modules) * 100);
+                        return (
+                            <div className="flex items-center gap-2 mt-1.5">
+                                <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-700 ${msPct >= 100 ? 'bg-emerald-500' : msPct >= 60 ? 'bg-blue-500' : msPct >= 30 ? 'bg-amber-400' : 'bg-slate-400'}`}
+                                        style={{ width: `${msPct}%` }}
+                                    />
+                                </div>
+                                <span className={`text-[9px] font-black tabular-nums w-6 text-right ${msPct >= 100 ? 'text-emerald-500' : msPct >= 60 ? 'text-blue-500' : 'text-muted-foreground'}`}>{msPct}%</span>
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -256,7 +279,14 @@ const MilestoneCard = ({ ms, projectId, canEdit, canAssign, allUsers, onUpdated 
                             canEdit={canEdit}
                             canAssign={canAssign}
                             allUsers={allUsers}
-                            onUpdated={() => loadModules()}
+                            onUpdated={async () => { await loadModules(true); }}
+                            onTasksChanged={(modId, tasks) => {
+                                // Re-report updated modules to parent with embedded tasks
+                                const withTasks = modules.map(m =>
+                                    m._id === modId ? { ...m, tasks } : m
+                                );
+                                onModulesChanged?.(ms._id, withTasks);
+                            }}
                         />
                     ))}
                 </div>
@@ -311,7 +341,8 @@ const MilestoneCard = ({ ms, projectId, canEdit, canAssign, allUsers, onUpdated 
 };
 
 // ── Module Row ────────────────────────────────────────────────────────────────
-const ModuleRow = ({ mod, projectId, milestoneId, canEdit, canAssign, allUsers, onUpdated }) => {
+// onTasksChanged(moduleId, tasks) — informs parent about task list changes
+const ModuleRow = ({ mod, projectId, milestoneId, canEdit, canAssign, allUsers, onUpdated, onTasksChanged }) => {
     const [tasks, setTasks] = useState([]);
     const [showTasks, setShowTasks] = useState(false);
     const [loadingTasks, setLoadingTasks] = useState(false);
@@ -326,7 +357,9 @@ const ModuleRow = ({ mod, projectId, milestoneId, canEdit, canAssign, allUsers, 
         setLoadingTasks(true);
         try {
             const res = await projectService.getTasks(projectId, milestoneId, mod._id);
-            setTasks(res.data?.data || []);
+            const loaded = res.data?.data || [];
+            setTasks(loaded);
+            onTasksChanged?.(mod._id, loaded);
         } catch { setTasks([]); }
         finally { setLoadingTasks(false); }
     };
@@ -339,7 +372,7 @@ const ModuleRow = ({ mod, projectId, milestoneId, canEdit, canAssign, allUsers, 
     const saveStatus = async () => {
         try {
             await projectService.updateModule(projectId, milestoneId, mod._id, { status: newStatus });
-            onUpdated();
+            onUpdated();   // triggers parent to reload modules → lifts up → recompute
             setEditStatus(false);
         } catch (e) { console.error(e); }
     };
@@ -362,17 +395,27 @@ const ModuleRow = ({ mod, projectId, milestoneId, canEdit, canAssign, allUsers, 
     };
 
     const updateTaskStatus = async (task, status) => {
+        // Optimistic UI update
+        const updated = tasks.map(t => t._id === task._id ? { ...t, status } : t);
+        setTasks(updated);
+        onTasksChanged?.(mod._id, updated);
         try {
             await projectService.updateTask(projectId, milestoneId, mod._id, task._id, { status });
+            // Reload to confirm server state
             await loadTasks();
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+            await loadTasks(); // revert on failure
+        }
     };
 
     const deleteTask = async (taskId) => {
         if (!window.confirm('Delete this task?')) return;
         try {
             await projectService.deleteTask(projectId, milestoneId, mod._id, taskId);
-            setTasks(t => t.filter(x => x._id !== taskId));
+            const remaining = tasks.filter(x => x._id !== taskId);
+            setTasks(remaining);
+            onTasksChanged?.(mod._id, remaining);
         } catch (e) { console.error(e); }
     };
 
@@ -384,6 +427,22 @@ const ModuleRow = ({ mod, projectId, milestoneId, canEdit, canAssign, allUsers, 
                     {showTasks ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                 </button>
                 <span className="text-sm font-semibold flex-1 min-w-0 truncate">{mod.name || mod.title}</span>
+                {/* Module progress bar — computed from loaded tasks */}
+                {tasks.length > 0 && (() => {
+                    const done = tasks.filter(t => ['done', 'completed', 'approved'].includes(t.status?.toLowerCase())).length;
+                    const modPct = Math.round((done / tasks.length) * 100);
+                    return (
+                        <div className="flex items-center gap-1.5 w-24 flex-shrink-0">
+                            <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${modPct >= 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                    style={{ width: `${modPct}%` }}
+                                />
+                            </div>
+                            <span className="text-[9px] font-black tabular-nums text-muted-foreground w-5 text-right">{modPct}%</span>
+                        </div>
+                    );
+                })()}
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                     {editStatus ? (
@@ -520,6 +579,8 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    // Computed progress (overrides project.progress in the UI)
+    const [liveProgress, setLiveProgress] = useState(null);
 
     // Assign dialog (project-level)
     const [assignDlg, setAssignDlg] = useState(false);
@@ -539,7 +600,21 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
     const projectImages = getProjectImages(project);
     const primaryImage = projectImages[0];
 
-    // ── Fetch data ──────────────────────────────────────────────────────────
+    // ── Recompute & persist progress ───────────────────────────────────────
+    const recomputeProgress = useCallback(async (updatedMilestones) => {
+        const msToUse = updatedMilestones ?? milestones;
+        const computed = computeProjectProgress(msToUse, project);
+        setLiveProgress(computed);
+        // Persist to backend so list pages see the updated value
+        try {
+            await projectService.updateProject(id, { progress: computed });
+            setProject(p => p ? { ...p, progress: computed } : p);
+        } catch (e) {
+            console.warn('Could not persist progress:', e);
+        }
+    }, [milestones, project, id]);
+
+    // ── Fetch data ───────────────────────────────────────────────────────
     const fetchProject = useCallback(async () => {
         try {
             const [projRes, msRes] = await Promise.all([
@@ -547,13 +622,26 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
                 projectService.getMilestones(id),
             ]);
             const apiProject = projRes.data?.data || null;
-            setProject(apiProject ? { ...(clickedProject || {}), ...apiProject } : clickedProject);
-            setMilestones(msRes.data?.data || []);
+            const loadedProject = apiProject ? { ...(clickedProject || {}), ...apiProject } : clickedProject;
+            const loadedMilestones = msRes.data?.data || [];
+            setProject(loadedProject);
+            setMilestones(loadedMilestones);
+            // Compute initial progress from whatever's loaded
+            const initialProgress = computeProjectProgress(loadedMilestones, loadedProject);
+            setLiveProgress(initialProgress);
         } catch (e) {
             setError('Failed to load project.');
             console.error(e);
         }
     }, [id, clickedProject]);
+
+    // Recompute whenever the milestones array changes (task/module status updates)
+    useEffect(() => {
+        if (milestones.length > 0) {
+            const computed = computeProjectProgress(milestones, project);
+            setLiveProgress(computed);
+        }
+    }, [milestones]); // eslint-disable-line
 
     useEffect(() => {
         const init = async () => {
@@ -618,12 +706,21 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
         } catch (e) { console.error(e); }
     };
 
+    // ── Go back helper — respects embedded vs routed context ────────────────
+    const goBack = () => {
+        if (onBackFromProps) {
+            onBackFromProps();
+        } else {
+            navigate('/projects');
+        }
+    };
+
     // ── Delete project ───────────────────────────────────────────────────────
     const deleteProject = async () => {
         if (!window.confirm(`Delete project "${project?.title}"? This cannot be undone.`)) return;
         try {
             await projectService.deleteProject(id);
-            navigate('/projects');
+            goBack();
         } catch (e) { console.error(e); }
     };
 
@@ -638,11 +735,15 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
         <div className="h-screen w-full flex flex-col items-center justify-center gap-4">
             <AlertCircle size={40} className="text-destructive" />
             <p className="text-muted-foreground font-semibold">{error || 'Project not found.'}</p>
-            <Button variant="outline" onClick={() => navigate('/projects')}>Go Back</Button>
+            <Button variant="outline" onClick={() => {
+                if (onBackFromProps) onBackFromProps();
+                else navigate('/projects');
+            }}>Go Back</Button>
         </div>
     );
 
-    const progress = project.progress || 0;
+    // Prefer live computed value; fall back to stored field
+    const progress = liveProgress !== null ? liveProgress : (project.progress ?? 0);
 
     return (
         <div className="min-h-screen bg-background overflow-y-auto">
@@ -657,10 +758,7 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
 
                 {/* Back button */}
                 <button
-                    onClick={() => {
-                        if (onBackFromProps) onBackFromProps();
-                        else navigate(-1);
-                    }}
+                    onClick={goBack}
                     className="absolute top-4 left-6 flex items-center gap-2 text-white/90 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-xl text-sm font-semibold transition-all"
                 >
                     <ArrowLeft size={16} /> Back
@@ -696,7 +794,6 @@ const ProjectDetail = ({ projectIdFromProps, onBackFromProps }) => {
 
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-8">
-
                 {/* Progress Bar */}
                 <div className="space-y-2">
                     <div className="flex justify-between text-xs font-bold uppercase tracking-tighter text-muted-foreground">

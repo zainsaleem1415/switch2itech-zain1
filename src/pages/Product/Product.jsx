@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../context/ContextProvider";
 import productService from "../../api/productService";
 import {
   Search,
@@ -16,6 +18,7 @@ import Main from "./Main";
 import { Button } from "../../components/ui/button";
 
 const ProductDashboard = () => {
+  const { role } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -94,12 +97,17 @@ const ProductDashboard = () => {
             <h1 className="text-3xl font-black tracking-tighter text-foreground">
               Digital Inventory
             </h1>
-            {/* <p className="text-muted-foreground text-sm font-medium">
-               {filteredProducts.length} Products
-            </p> */}
           </div>
 
           <div className="flex items-center gap-3">
+            {role === "admin" && (
+              <Link
+                to="/admin/products"
+                className="h-10 px-4 font-bold rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 flex items-center gap-2 text-sm transition-colors"
+              >
+                Manage Products
+              </Link>
+            )}
             {/* SEARCH */}
             <div className="relative">
               <Search
@@ -121,11 +129,10 @@ const ProductDashboard = () => {
                 variant={viewMode === "grid" ? "default" : "ghost"} // Change 'secondary' to 'default'
                 size="icon"
                 onClick={() => setViewMode("grid")}
-                className={`h-8 w-8 transition-all ${
-                  viewMode === "grid"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-background"
-                }`}
+                className={`h-8 w-8 transition-all ${viewMode === "grid"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-background"
+                  }`}
               >
                 <LayoutGrid size={16} />
               </Button>
@@ -134,11 +141,10 @@ const ProductDashboard = () => {
                 variant={viewMode === "list" ? "default" : "ghost"} // Change 'secondary' to 'default'
                 size="icon"
                 onClick={() => setViewMode("list")}
-                className={`h-8 w-8 transition-all ${
-                  viewMode === "list"
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-background"
-                }`}
+                className={`h-8 w-8 transition-all ${viewMode === "list"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-background"
+                  }`}
               >
                 <List size={16} />
               </Button>
