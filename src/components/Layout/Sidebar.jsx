@@ -168,7 +168,7 @@ const Sidebar = () => {
             )}
             <div className="space-y-0.5">
               {mainMenu.map((item, i) => (
-                <NavItem key={item.path} item={item} isCollapsed={isCollapsed} />
+                <NavItem key={i} item={item} isCollapsed={isCollapsed} />
               ))}
             </div>
           </div>
