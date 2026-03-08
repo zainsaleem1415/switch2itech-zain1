@@ -43,16 +43,27 @@ const Testimonialspage = () => {
     { label: "Pending Approval", value: reviews.filter(r => !r.isApproved).length, icon: Clock, color: "text-rose-500", bg: "bg-rose-500/10" },
   ]
 
+  const FILTER_TABS = [
+    { label: "All", value: "All" },
+    { label: "Published", value: "Published" },
+    { label: "Review", value: "Review" },
+    { label: "Pending", value: "Pending" },
+  ]
+
   const filtered = reviews.filter(r => {
     const name = r.authorNameOverride || r.author?.name || r.clientName || ""
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesTab = activeTab === "All"
-      || (activeTab === "Featured" ? r.isFeatured : activeTab === "Published" ? r.isApproved : !r.isApproved)
+      || (activeTab === "Published"
+        ? r.isApproved
+        : activeTab === "Review"
+          ? r.isFeatured
+          : !r.isApproved)
     return matchesTab && matchesSearch
   })
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 space-y-8 animate-in fade-in duration-400">
+    <div className="min-h-screen bg-background p-1 sm:p-4 md:p-8 space-y-8 animate-in fade-in duration-400">
 
       {/* Hero Header */}
       <div className="relative rounded-2xl overflow-hidden border border-border/40 bg-card">
@@ -98,15 +109,15 @@ const Testimonialspage = () => {
       {/* Table Card */}
       <div className="dashboard-glass rounded-2xl overflow-hidden border-border/50 shadow-sm">
         {/* Filter bar */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-6 py-5 border-b border-border/40 bg-card/30">
-          <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl w-fit border border-border/50">
-            {["All", "Published", "Pending", "Featured"].map(tab => (
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 px-3 sm:px-6 py-4 sm:py-5 border-b border-border/40 bg-card/30">
+          <div className="grid grid-cols-2 sm:flex items-center gap-1 bg-secondary/50 p-1 rounded-xl w-full sm:w-fit border border-border/50">
+            {FILTER_TABS.map(tab => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === tab ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-center whitespace-nowrap ${activeTab === tab.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>

@@ -40,7 +40,7 @@ const CHANNELS = [
 
 const Support = () => {
   return (
-    <div className="min-h-screen bg-background p-8 space-y-10 animate-in fade-in duration-400">
+    <div className="min-h-screen bg-background p-1 sm:p-4 md:p-8 space-y-10 animate-in fade-in duration-400">
 
       {/* Hero search header */}
       <div className="flex flex-col items-center text-center max-w-2xl mx-auto space-y-5 py-6">

@@ -30,8 +30,9 @@ const ProjectDetail = lazy(() => import('./pages/Project/ProjectDetail'));
 const Support = lazy(() => import('./pages/Support/Support'));
 const Signin = lazy(() => import('./pages/Signin/Signin'));
 const Signup = lazy(() => import('./pages/Signup/Signup'));
+const OtpVerification = lazy(() => import('./pages/OtpVerification/OtpVerification'));
 const NotFound = lazy(() => import('./pages/NotFound'));
-
+const Profile= lazy(()=>import('./pages/Profile/Profile'))
 // Admin Management pages
 const AdminProjects = lazy(() => import('./pages/Admindashboard/Projectspage'));
 const AdminUsers = lazy(() => import('./pages/Admindashboard/Userspage'));
@@ -53,11 +54,11 @@ const PageSkeleton = () => (
       <div className="mt-auto h-16 bg-muted/30 rounded-xl animate-pulse" />
     </div>
     {/* Main Content Skeleton */}
-    <div className="flex-1 p-6 md:p-8 space-y-8 flex flex-col">
+    <div className="flex-1 p-2 sm:p-4 md:p-8 space-y-6 md:space-y-8 flex flex-col">
       {/* Hero Header Skeleton */}
       <div className="h-32 bg-muted/30 rounded-2xl animate-pulse border border-border/50" />
       {/* Stat Cards Grid Skeleton */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
           <div key={i} className="h-32 bg-muted/20 rounded-2xl animate-pulse border border-border/40" />
         ))}
@@ -202,6 +203,7 @@ const App = () => {
         <Route element={<RequestAuth />}>
           <Route path="/login" element={<Signin />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-otp" element={<OtpVerification />} />
         </Route>
       </Routes>
     </Suspense>

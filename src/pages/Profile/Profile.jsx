@@ -161,7 +161,7 @@ const Profile = () => {
   const initials = user.name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "??";
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 animate-in fade-in duration-400 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background p-1 sm:p-4 md:p-8 animate-in fade-in duration-400 max-w-5xl mx-auto">
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -174,10 +174,10 @@ const Profile = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
-            className="gap-2 rounded-xl border-primary/20 hover:border-primary/50 text-foreground transition-all"
+            className="w-full sm:w-auto gap-2 rounded-xl border-primary/20 hover:border-primary/50 text-foreground transition-all text-xs sm:text-sm"
             onClick={() => setIsEditing(!isEditing)}
           >
             {isEditing ? <X size={15} /> : <Edit3 size={15} />}
@@ -186,7 +186,7 @@ const Profile = () => {
 
           <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 rounded-xl shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-primary border-0 transition-all">
+              <Button className="w-full sm:w-auto gap-2 rounded-xl shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-primary border-0 transition-all text-xs sm:text-sm">
                 <KeyRound size={15} /> Change Password
               </Button>
             </DialogTrigger>

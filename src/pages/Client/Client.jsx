@@ -48,7 +48,7 @@ const Userspage = () => {
   )
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 space-y-8 animate-in fade-in duration-400">
+    <div className="min-h-screen bg-background p-1 sm:p-4 md:p-8 space-y-8 animate-in fade-in duration-400">
 
       {/* Header Section */}
       <div className="relative rounded-2xl overflow-hidden border border-border/40 bg-card">
@@ -97,13 +97,12 @@ const Userspage = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-hidden">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-muted/30 border-b border-border/40 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                <th className="px-6 py-4 font-black">Member Profile</th>
-                <th className="px-6 py-4 font-black">Company</th>
-                <th className="px-6 py-4 font-black">Status</th>
+                <th className="px-6 py-4 font-black">Name</th>
+                <th className="px-6 py-4 font-black">Activeness</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -114,16 +113,10 @@ const Userspage = () => {
                       <div className="h-10 w-10 rounded-xl border-2 border-border/40 overflow-hidden shadow-sm">
                         <img src={user.profile || `https://i.pravatar.cc/150?u=${user._id}`} alt="" />
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col min-w-0">
                         <span className="font-bold text-sm text-foreground">{user.name}</span>
-                        <span className="text-[11px] text-muted-foreground font-medium">{user.email}</span>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-medium text-foreground">
-                      {user.company || "N/A"}
-                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <Badge className={`px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-md border ${user.status === "Inactive" ? "bg-red-500/10 text-red-600 border-red-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>

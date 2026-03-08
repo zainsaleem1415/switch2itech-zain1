@@ -178,17 +178,17 @@ export default function App({ product: propProduct, onBack }) {
     <div className="min-h-screen bg-background">
       {/* Header with Back Button */}
       <header className="border-b border-border bg-card">
-        <div className="mx-auto max-w-7xl px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="mx-auto max-w-7xl px-3 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <button
                 onClick={handleBack}
-                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-foreground transition-colors hover:bg-muted"
+                className="flex items-center gap-1.5 rounded-lg border border-border px-3 sm:px-4 py-2 text-foreground transition-colors hover:bg-muted shrink-0 text-sm"
               >
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 Back
               </button>
-              <h1 className="font-semibold text-2xl text-foreground">
+              <h1 className="font-semibold text-base sm:text-2xl text-foreground truncate">
                 {product.name}
               </h1>
             </div>
@@ -207,26 +207,26 @@ export default function App({ product: propProduct, onBack }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-12">
+      <main className="mx-auto max-w-7xl px-3 sm:px-6 py-6 sm:py-12">
         {/* Product Overview Section */}
-        <div className="mb-16 grid gap-12 lg:grid-cols-2">
+        <div className="mb-10 sm:mb-16 grid gap-6 sm:gap-12 lg:grid-cols-2">
           <div>
             <ProductGallery images={productImages} />
           </div>
 
           <div className="flex flex-col">
-            <div className="mb-2 inline-flex items-center gap-2">
+            <div className="mb-2 inline-flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-primary/10 px-3 py-1 text-primary font-medium">
                 {product.category}
               </span>
-              <div className="flex items-center gap-1">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span>4.9</span>
-                <span className="text-muted-foreground">(Verified Asset)</span>
+              <div className="flex items-center gap-1 text-sm">
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400" />
+                <span className="font-medium">4.9</span>
+                <span className="text-muted-foreground hidden sm:inline">(Verified Asset)</span>
               </div>
             </div>
 
-            <h1 className="mb-4 text-4xl font-bold text-foreground">
+            <h1 className="mb-4 text-2xl sm:text-4xl font-bold text-foreground leading-tight">
               {product.name}
             </h1>
 
@@ -234,13 +234,13 @@ export default function App({ product: propProduct, onBack }) {
               {product.desc}
             </p>
 
-            <div className="mb-6 rounded-lg bg-card p-6 border border-border">
-              <div className="mb-4 flex items-baseline gap-3">
-                <span className="text-muted-foreground line-through text-lg">
+            <div className="mb-6 rounded-lg bg-card p-4 sm:p-6 border border-border">
+              <div className="mb-4 flex flex-wrap items-baseline gap-2 sm:gap-3">
+                <span className="text-muted-foreground line-through text-base sm:text-lg">
                   $299
                 </span>
-                <span className="text-primary text-3xl font-bold">$199</span>
-                <span className="rounded-full bg-destructive/10 px-3 py-1 text-destructive text-sm font-bold">
+                <span className="text-primary text-2xl sm:text-3xl font-bold">$199</span>
+                <span className="rounded-full bg-destructive/10 px-2.5 sm:px-3 py-1 text-destructive text-xs sm:text-sm font-bold">
                   Save $100
                 </span>
               </div>
@@ -262,15 +262,15 @@ export default function App({ product: propProduct, onBack }) {
                 </div>
               </div>
 
-              <div className="mb-4 flex items-center gap-3">
-                <label htmlFor="quantity" className="font-medium text-foreground">
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <label htmlFor="quantity" className="font-medium text-foreground text-sm sm:text-base">
                   Licenses:
                 </label>
                 <select
                   id="quantity"
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="rounded-lg border border-input px-4 py-2 bg-background text-foreground outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full sm:w-auto rounded-lg border border-input px-3 sm:px-4 py-2 bg-background text-foreground outline-none focus:ring-2 focus:ring-ring text-sm"
                 >
                   <option value={1}>1 License - $199</option>
                   <option value={5}>5 Licenses - $899</option>
@@ -278,7 +278,7 @@ export default function App({ product: propProduct, onBack }) {
                 </select>
               </div>
 
-              <button className="w-full md:w-2/3 rounded-lg bg-primary px-6 py-4 text-primary-foreground font-bold transition-all hover:bg-primary/90 shadow-lg active:scale-95">
+              <button className="w-full sm:w-auto sm:min-w-[220px] rounded-lg bg-primary px-5 sm:px-6 py-3.5 sm:py-4 text-primary-foreground font-bold transition-all hover:bg-primary/90 shadow-lg active:scale-95 text-sm sm:text-base">
                 Buy {product.name} Now
               </button>
             </div>
@@ -295,7 +295,7 @@ export default function App({ product: propProduct, onBack }) {
         {/* Features Section */}
         <section className="mb-16">
           <div className="mb-8 text-center">
-            <h2 className="mb-3 text-3xl font-bold text-foreground">
+            <h2 className="mb-3 text-2xl sm:text-3xl font-bold text-foreground">
               Technical Specifications
             </h2>
             <p className="text-muted-foreground">
@@ -316,9 +316,9 @@ export default function App({ product: propProduct, onBack }) {
 
         {/* Reviews Section */}
         <section className="mb-16">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="mb-3 text-3xl font-bold text-foreground">
+              <h2 className="mb-3 text-2xl sm:text-3xl font-bold text-foreground">
                 Customer Reviews
               </h2>
               <p className="text-muted-foreground">
@@ -327,7 +327,7 @@ export default function App({ product: propProduct, onBack }) {
             </div>
             <button
               onClick={() => setReviewFormOpen(true)}
-              className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold transition-all hover:bg-primary/90 active:scale-95 shadow-md"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-primary px-5 sm:px-6 py-3 text-primary-foreground font-semibold transition-all hover:bg-primary/90 active:scale-95 shadow-md text-sm sm:text-base"
             >
               <Plus className="h-5 w-5" />
               Write a Review

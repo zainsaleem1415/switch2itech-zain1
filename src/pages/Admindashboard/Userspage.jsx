@@ -71,7 +71,7 @@ const Userspage = () => {
   )
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 space-y-8 animate-in fade-in duration-400">
+    <div className="min-h-screen bg-background p-1 sm:p-4 md:p-8 space-y-8 animate-in fade-in duration-400">
 
       {/* Hero Header */}
       <div className="relative rounded-2xl overflow-hidden border border-border/40 bg-card">
@@ -135,7 +135,88 @@ const Userspage = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="md:hidden p-3 space-y-3">
+          {loading && filtered.length === 0 ? (
+            <div className="px-4 py-10 text-center text-muted-foreground font-bold">
+              Loading Directory...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="px-4 py-10 text-center text-muted-foreground font-bold italic">
+              No users matched your search criteria.
+            </div>
+          ) : (
+            filtered.map(user => (
+              <div key={user._id} className="p-4 space-y-3 rounded-xl border border-border/40 bg-card/40 hover:bg-secondary/20 transition-colors">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={user.profile || `https://i.pravatar.cc/150?u=${user._id}`}
+                    className="h-10 w-10 rounded-xl border border-border/60 object-cover shadow-sm"
+                    alt=""
+                  />
+                  <div className="min-w-0">
+                    <p className="font-extrabold text-sm truncate">{user.name}</p>
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5 font-medium truncate">
+                      <Mail size={10} /> {user.email}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  {editingRole === user._id ? (
+                    <div className="flex items-center gap-2 w-full">
+                      <select
+                        className="h-8 rounded-lg border border-primary bg-background px-2 text-xs font-bold w-full uppercase tracking-widest text-primary focus:ring-0"
+                        value={newRole}
+                        onChange={e => setNewRole(e.target.value)}
+                      >
+                        {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10 rounded-lg shrink-0" onClick={() => handleRoleUpdate(user._id)}>
+                        <Check size={16} />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-lg shrink-0" onClick={() => setEditingRole(null)}>
+                        <XCircle size={16} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Badge className={`border px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-md ${ROLE_BADGE[user.role] || ROLE_BADGE.user}`}>
+                        {user.role || "user"}
+                      </Badge>
+                      <Badge className={`border px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-md flex items-center w-fit gap-1.5 ${user.status?.toLowerCase() === "inactive" ? "bg-red-500/10 text-red-600 border-red-500/20" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}>
+                        {user.status?.toLowerCase() === "inactive" ? <XCircle size={10} /> : <CheckCircle2 size={10} />}
+                        {user.status || "Active"}
+                      </Badge>
+                    </>
+                  )}
+                </div>
+
+                {editingRole !== user._id && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2.5 text-[10px] font-black uppercase tracking-wider gap-1.5 rounded-lg border-blue-500/30 text-blue-500 hover:bg-blue-500/10"
+                      onClick={() => { setEditingRole(user._id); setNewRole(user.role || "user") }}
+                    >
+                      <Edit size={12} /> Change Role
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-500 transition-colors"
+                      onClick={() => handleDelete(user._id)}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-secondary/20 border-b border-border/40 text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground/80">

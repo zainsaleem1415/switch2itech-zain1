@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Search, Bell, Calendar, ChevronRight, Sun, Moon } from 'lucide-react'
+import { Search, Bell, Calendar, ChevronRight, Sun, Moon, Menu } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTheme } from './ThemeContext'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 
-const Navbar = () => {
+const Navbar = ({ onMenuClick }) => {
   const { darkMode, toggleTheme } = useTheme()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
@@ -27,9 +27,21 @@ const Navbar = () => {
   ]
 
   const segments = location.pathname.split('/').filter(Boolean)
-  const currentPage = segments.length === 0
-    ? 'Overview'
-    : segments[segments.length - 1].charAt(0).toUpperCase() + segments[segments.length - 1].slice(1)
+  const routeStateProjectName =
+    location.state?.project?.title ||
+    location.state?.project?.name ||
+    location.state?.projectName ||
+    null
+
+  const isProjectDetailRoute =
+    (segments[0] === 'projects' && segments.length === 2) ||
+    (segments[0] === 'admin' && segments[1] === 'projects' && segments.length === 3)
+
+  const currentPage = isProjectDetailRoute
+    ? (routeStateProjectName || 'Project Detail')
+    : segments.length === 0
+      ? 'Overview'
+      : segments[segments.length - 1].charAt(0).toUpperCase() + segments[segments.length - 1].slice(1)
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -64,17 +76,26 @@ const Navbar = () => {
   }
 
   return (
-    <header className="h-16 px-6 flex items-center justify-between shrink-0 border-b border-border bg-card transition-colors duration-300 relative">
+    <header className="min-h-16 px-2 sm:px-4 md:px-6 py-2 md:py-0 flex items-center justify-between gap-2 shrink-0 border-b border-border bg-card transition-colors duration-300 relative">
 
       {/* ── Breadcrumb ──────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 text-sm select-none">
-        <span className="text-muted-foreground font-medium">Dashboard</span>
+      <div className="flex items-center gap-1 text-sm select-none min-w-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onMenuClick}
+          className="h-8 w-8 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 md:hidden shrink-0"
+          aria-label="Toggle menu"
+        >
+          <Menu size={17} />
+        </Button>
+        <span className="text-muted-foreground font-medium hidden sm:inline">Dashboard</span>
         <ChevronRight size={13} className="text-muted-foreground/40" />
-        <span className="font-bold text-foreground tracking-tight">{currentPage}</span>
+        <span className="font-bold text-foreground tracking-tight truncate">{currentPage}</span>
       </div>
 
       {/* ── Search ──────────────────────────────────────────────── */}
-      <div className="flex-1 max-w-sm mx-6 relative" ref={searchRef}>
+      <div className="hidden sm:block flex-1 max-w-sm mx-2 md:mx-6 relative" ref={searchRef}>
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
@@ -105,9 +126,9 @@ const Navbar = () => {
       </div>
 
       {/* ── Actions ─────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
         {/* Divider */}
-        <div className="h-5 w-px bg-border mx-1" />
+        <div className="h-5 w-px bg-border mx-0.5 sm:mx-1" />
 
         {/* Bell */}
         <div className="relative">
@@ -124,12 +145,12 @@ const Navbar = () => {
           {showNotifications && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-              <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 origin-top-right">
+              <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] max-w-72 sm:w-72 bg-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 origin-top-right">
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                   <h3 className="font-bold text-sm">Notifications</h3>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">0 New</span>
                 </div>
-                <div className="p-8 text-center">
+                <div className="p-4 sm:p-8 text-center">
                   <div className="mx-auto w-10 h-10 bg-secondary rounded-full flex items-center justify-center mb-3">
                     <Bell size={16} className="text-muted-foreground" />
                   </div>
@@ -155,7 +176,7 @@ const Navbar = () => {
           {showCalendar && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowCalendar(false)} />
-              <div className="absolute right-0 top-full mt-2 w-68 bg-card border border-border rounded-2xl shadow-2xl z-50 p-4 animate-in fade-in zoom-in-95 duration-150 origin-top-right">
+              <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] max-w-72 sm:w-72 bg-card border border-border rounded-2xl shadow-2xl z-50 p-3 sm:p-4 animate-in fade-in zoom-in-95 duration-150 origin-top-right">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-sm">Schedule</h3>
                   <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Today</span>

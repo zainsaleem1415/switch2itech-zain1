@@ -23,7 +23,7 @@ const Overview = () => {
   // Admin: full dashboard
   if (role === 'admin') {
     return (
-      <div className="min-h-screen bg-background p-8 space-y-8">
+      <div className="min-h-screen bg-background p-1 sm:p-4 md:p-8 space-y-8">
         <Top />
         <div className="space-y-8 animate-in fade-in duration-500">
           <Main />
