@@ -4,6 +4,23 @@ import authService from "../api/authService";
 
 export const userContext = createContext();
 
+const isUserVerified = (userData) => {
+  if (!userData) return false;
+
+  if (typeof userData.isVerified === "boolean") {
+    return userData.isVerified;
+  }
+
+  const emailVerified =
+    typeof userData.isEmailVerified === "boolean" ? userData.isEmailVerified : true;
+  const phoneRequired = Boolean(userData.phoneNo);
+  const phoneVerified = phoneRequired
+    ? (typeof userData.isPhoneVerified === "boolean" ? userData.isPhoneVerified : true)
+    : true;
+
+  return emailVerified && phoneVerified;
+};
+
 export const ContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
@@ -16,9 +33,23 @@ export const ContextProvider = ({ children }) => {
         const response = await authService.getCurrentUser();
         if (response.data && (response.data.status === "success" || response.data.user)) {
           const userData = response.data.data?.user || response.data.data || response.data.user;
-          setUser(userData);
-          setRole(userData?.role || 'user');
-          setAuthenticated(true);
+          if (isUserVerified(userData)) {
+            setUser(userData);
+            setRole(userData?.role || "user");
+            setAuthenticated(true);
+          } else {
+            setAuthenticated(false);
+            setRole(null);
+            setUser(null);
+            localStorage.setItem(
+              "pending_verification",
+              JSON.stringify({
+                email: userData?.email || "",
+                phoneNo: userData?.phoneNo || "",
+                userId: userData?._id || null,
+              })
+            );
+          }
         } else {
           setAuthenticated(false);
         }

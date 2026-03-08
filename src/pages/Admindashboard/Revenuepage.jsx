@@ -57,15 +57,15 @@ const Revenuepage = () => {
   )
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 space-y-8 animate-in fade-in duration-400">
+    <div className="min-h-screen bg-background p-1 sm:p-4 md:p-8 space-y-8 animate-in fade-in duration-400">
 
       {/* Hero Header */}
       <div className="relative rounded-2xl overflow-hidden border border-border/40 bg-card">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-primary/5 pointer-events-none" />
         <div className="absolute -top-16 -right-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative px-8 py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="relative px-4 sm:px-6 md:px-8 py-6 sm:py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <Link to="/" className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-muted-foreground hover:bg-muted hover:text-foreground text-[10px] font-black uppercase tracking-widest transition-colors">
                 <ArrowLeft size={12} />
                 Dashboard
@@ -80,11 +80,11 @@ const Revenuepage = () => {
               Track project earnings, automated invoices, transaction history, and fiscal growth in real-time.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" className="h-11 px-5 rounded-xl font-bold gap-2 hover:bg-secondary/80">
+          <div className="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            <Button variant="outline" className="w-full sm:w-auto h-10 sm:h-11 px-4 sm:px-5 rounded-xl font-bold gap-2 hover:bg-secondary/80 text-xs sm:text-sm">
               <Calendar size={16} /> Last 30 Days
             </Button>
-            <Button className="h-11 px-6 rounded-xl font-bold gap-2 shadow-lg shadow-emerald-500/20 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-teal-500 hover:to-emerald-500 border-0 text-white transition-all">
+            <Button className="w-full sm:w-auto h-10 sm:h-11 px-4 sm:px-6 rounded-xl font-bold gap-2 shadow-lg shadow-emerald-500/20 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-teal-500 hover:to-emerald-500 border-0 text-white transition-all text-xs sm:text-sm">
               <Download size={16} /> Export Report
             </Button>
           </div>
@@ -113,7 +113,7 @@ const Revenuepage = () => {
 
         {/* Revenue Ledger */}
         <div className="lg:col-span-2 dashboard-glass rounded-2xl overflow-hidden border-border/50 shadow-sm flex flex-col">
-          <div className="flex flex-col md:flex-row md:items-center justify-between px-6 py-5 border-b border-border/40 bg-card/30 gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-border/40 bg-card/30 gap-4">
             <div>
               <h2 className="text-base font-extrabold tracking-tight">Revenue Ledger</h2>
               <p className="text-xs text-muted-foreground mt-0.5">Earnings breakdown by project budget via API</p>
@@ -129,38 +129,41 @@ const Revenuepage = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto flex-1">
+          <div className="overflow-x-hidden sm:overflow-x-auto flex-1">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-secondary/20 border-b border-border/40 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">
-                  <th className="px-6 py-4">Project &amp; Client</th>
-                  <th className="px-6 py-4">Category</th>
+                  <th className="px-4 sm:px-6 py-4">
+                    <span className="sm:hidden">Name</span>
+                    <span className="hidden sm:inline">Project &amp; Client</span>
+                  </th>
+                  <th className="px-6 py-4 hidden sm:table-cell">Category</th>
                   <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right" />
+                  <th className="px-6 py-4 hidden sm:table-cell">Status</th>
+                  <th className="px-6 py-4 text-right hidden sm:table-cell" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/30">
                 {loading && filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-bold">
+                    <td colSpan={5} className="px-4 sm:px-6 py-12 text-center text-muted-foreground font-bold">
                       <Loader2 className="animate-spin inline mr-2" size={16} /> Syncing Finances...
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-bold italic">
+                    <td colSpan={5} className="px-4 sm:px-6 py-12 text-center text-muted-foreground font-bold italic">
                       No financial records found.
                     </td>
                   </tr>
                 ) : (
                   filtered.map(item => (
                     <tr key={item._id} className="group hover:bg-secondary/30 transition-colors">
-                      <td className="px-6 py-4">
+                      <td className="px-4 sm:px-6 py-4">
                         <p className="font-extrabold text-sm">{item.projectName}</p>
-                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{item.client}</p>
+                        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-1 hidden sm:block">{item.client}</p>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 hidden sm:table-cell">
                         <Badge variant="secondary" className="border border-border/50 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md">
                           {item.category}
                         </Badge>
@@ -168,12 +171,12 @@ const Revenuepage = () => {
                       <td className="px-6 py-4 font-black text-sm text-foreground tabular-nums">
                         ${(item.amount || 0).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 hidden sm:table-cell">
                         <Badge className={`border rounded-lg text-[9px] font-black uppercase px-2 py-0.5 tracking-widest ${item.status === "Paid" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"}`}>
                           {item.status}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right hidden sm:table-cell">
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-100 lg:opacity-0 group-hover:opacity-100">
                           <ArrowUpRight size={14} />
                         </Button>

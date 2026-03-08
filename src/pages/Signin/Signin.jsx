@@ -12,6 +12,17 @@ const Signin = () => {
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({ email: "", password: "" });
 
+  const isUserVerified = (userData) => {
+    if (!userData) return false;
+    if (typeof userData.isVerified === "boolean") return userData.isVerified;
+    const emailVerified = typeof userData.isEmailVerified === "boolean" ? userData.isEmailVerified : true;
+    const phoneRequired = Boolean(userData.phoneNo);
+    const phoneVerified = phoneRequired
+      ? (typeof userData.isPhoneVerified === "boolean" ? userData.isPhoneVerified : true)
+      : true;
+    return emailVerified && phoneVerified;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -20,11 +31,27 @@ const Signin = () => {
       const response = await authService.login(formData);
       if (response.data.status === "success" || response.data.user) {
         const userData = response.data.data?.user || response.data.data || response.data.user;
-        setUser(userData);
-        setRole(userData?.role || "user");
-        setAuthenticated(true);
-        localStorage.setItem("user", JSON.stringify(userData));
-        navigate("/profile");
+        if (isUserVerified(userData)) {
+          setUser(userData);
+          setRole(userData?.role || "user");
+          setAuthenticated(true);
+          localStorage.setItem("user", JSON.stringify(userData));
+          navigate("/profile");
+        } else {
+          setAuthenticated(false);
+          setUser(null);
+          setRole(null);
+          localStorage.setItem(
+            "pending_verification",
+            JSON.stringify({
+              email: userData?.email || formData.email || "",
+              phoneNo: userData?.phoneNo || "",
+              userId: userData?._id || null,
+            })
+          );
+          setError("Account not verified. Please verify OTP.");
+          navigate("/verify-otp");
+        }
       }
     } catch (err) {
       setError(err.response?.data?.message || "Invalid email or password");

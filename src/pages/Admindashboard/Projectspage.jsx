@@ -22,6 +22,7 @@ import {
   ArrowLeft, ShieldCheck, Zap, Target, RefreshCw,
   BarChart3, X,
 } from "lucide-react";
+import { Navigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
@@ -187,6 +188,7 @@ const Projects = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("All");
+  const [layout, setLayout] = useState("grid");
   const [selectedProject, setSelectedProject] = useState(null);
   const navigate = useNavigate();
 
@@ -375,7 +377,7 @@ const Projects = () => {
             {filtered.map(p => (
               <AdminProjectCard
                 key={p._id} project={p}
-                onView={proj => navigate(`/admin/projects/${proj._id}`)}
+                onView={proj => navigate(`/admin/projects/${proj._id}`, { state: { project: proj } })}
                 onEdit={proj => navigate(`/admin/projects/${proj._id}/edit`)}
                 onDelete={handleDelete}
                 onMonitor={proj => navigate(`/admin/projects/${proj._id}/monitor`)}
@@ -391,7 +393,7 @@ const Projects = () => {
             {filtered.map(p => (
               <AdminListRow
                 key={p._id} project={p}
-                onView={proj => navigate(`/admin/projects/${proj._id}`)}
+                onView={proj => navigate(`/admin/projects/${proj._id}`, { state: { project: proj } })}
                 onEdit={proj => navigate(`/admin/projects/${proj._id}/edit`)}
                 onDelete={handleDelete}
                 onMonitor={proj => navigate(`/admin/projects/${proj._id}/monitor`)}

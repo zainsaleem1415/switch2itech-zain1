@@ -17,10 +17,11 @@ import logoUrl from "/Images/Logo.png";
 /* ── NavItem must be defined OUTSIDE Sidebar so React doesn't treat it
    as a new component type on every render (which causes full remount,
    logo flicker, and dozens of redundant Logo.png requests). ────────────── */
-const NavItem = ({ item, isCollapsed }) => (
+const NavItem = ({ item, isCollapsed, onClick }) => (
   <NavLink
     to={item.path}
     end={item.path === "/"}
+    onClick={onClick}
     className={({ isActive }) =>
       `relative w-full flex items-center px-3.5 py-2.5 rounded-xl transition-all duration-200 group
       ${isActive
@@ -86,7 +87,7 @@ const ADMIN_MENU = [
 
 const SYSTEM_MENU = [{ icon: LifeBuoy, label: "Support", path: "/support" }];
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen = false, onMobileClose = () => {} }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const navigate = useNavigate();
   const { user, role, loading, setAuthenticated, setUser, setRole } = useAuth();
@@ -106,13 +107,22 @@ const Sidebar = () => {
   };
 
   return (
-    <div
-      className={`h-screen flex flex-col border-r bg-card border-border shrink-0 transition-all duration-300 ease-in-out z-50 ${isCollapsed ? "w-[68px]" : "w-64"
-        }`}
-    >
+    <>
+      {mobileOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] md:hidden"
+          onClick={onMobileClose}
+          aria-label="Close sidebar"
+        />
+      )}
+      <aside
+        className={`fixed md:static inset-y-0 left-0 h-screen flex flex-col border-r bg-card border-border shrink-0 transition-all duration-300 ease-in-out z-50 md:z-auto
+        w-72 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 ${isCollapsed ? "md:w-[68px]" : "md:w-64"}`}
+      >
       {/* ── Logo / Header ───────────────────────────────────────── */}
       <div
-        className={`h-16 flex items-center border-b border-border transition-all duration-300 ${isCollapsed ? "px-0 justify-center" : "px-5 justify-between"
+        className={`h-16 flex items-center border-b border-border transition-all duration-300 ${isCollapsed ? "md:px-0 md:justify-center px-5 justify-between" : "px-5 justify-between"
           }`}
       >
         <div className="flex items-center gap-2.5 overflow-hidden shrink-0">
@@ -140,7 +150,7 @@ const Sidebar = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsCollapsed(true)}
+            onClick={() => (window.innerWidth < 768 ? onMobileClose() : setIsCollapsed(true))}
             className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg shrink-0"
           >
             <PanelLeftClose size={16} />
@@ -151,7 +161,7 @@ const Sidebar = () => {
       {isCollapsed && (
         <button
           onClick={() => setIsCollapsed(false)}
-          className="h-10 w-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors border-b border-border"
+          className="h-10 w-full items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors border-b border-border hidden md:flex"
         >
           <PanelLeftOpen size={16} />
         </button>
@@ -167,8 +177,8 @@ const Sidebar = () => {
               </p>
             )}
             <div className="space-y-0.5">
-              {mainMenu.map((item, i) => (
-                <NavItem key={i} item={item} isCollapsed={isCollapsed} />
+              {mainMenu.map((item) => (
+                <NavItem key={item.path} item={item} isCollapsed={isCollapsed} onClick={onMobileClose} />
               ))}
             </div>
           </div>
@@ -183,7 +193,7 @@ const Sidebar = () => {
               )}
               <div className="space-y-0.5">
                 {ADMIN_MENU.map((item) => (
-                  <NavItem key={item.path} item={item} isCollapsed={isCollapsed} />
+                  <NavItem key={item.path} item={item} isCollapsed={isCollapsed} onClick={onMobileClose} />
                 ))}
               </div>
             </div>
@@ -197,7 +207,7 @@ const Sidebar = () => {
             )}
             <div className="space-y-0.5">
               {SYSTEM_MENU.map((item) => (
-                <NavItem key={item.path} item={item} isCollapsed={isCollapsed} />
+                <NavItem key={item.path} item={item} isCollapsed={isCollapsed} onClick={onMobileClose} />
               ))}
             </div>
           </div>
@@ -214,6 +224,7 @@ const Sidebar = () => {
           <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-2"}`}>
             <NavLink
               to="/profile"
+              onClick={onMobileClose}
               className={({ isActive }) =>
                 `flex flex-1 items-center gap-2.5 px-2 py-2 rounded-xl transition-all duration-200 overflow-hidden min-w-0
                 ${isActive
@@ -260,7 +271,8 @@ const Sidebar = () => {
           </div>
         )}
       </div>
-    </div>
+      </aside>
+    </>
   );
 };
 

@@ -16,6 +16,13 @@ const Testimonialspage = () => {
   const [activeTab, setActiveTab] = useState("All")
   const [searchTerm, setSearchTerm] = useState("")
 
+  const FILTER_TABS = [
+    { label: "All", value: "All" },
+    { label: "Published", value: "Published" },
+    { label: "Review", value: "Review" },
+    { label: "Pending", value: "Pending" },
+  ]
+
   const fetchTestimonials = async () => {
     try {
       setLoading(true)
@@ -72,20 +79,24 @@ const Testimonialspage = () => {
     const name = r.authorNameOverride || r.author?.name || r.clientName || ""
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesTab = activeTab === "All"
-      || (activeTab === "Featured" ? r.isFeatured : activeTab === "Published" ? r.isApproved : !r.isApproved)
+      || (activeTab === "Published"
+        ? r.isApproved
+        : activeTab === "Review"
+          ? r.isFeatured
+          : !r.isApproved)
     return matchesTab && matchesSearch
   })
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8 space-y-8 animate-in fade-in duration-400">
+    <div className="min-h-screen bg-background p-1 sm:p-4 md:p-8 space-y-8 animate-in fade-in duration-400">
 
       {/* Hero Header */}
       <div className="relative rounded-2xl overflow-hidden border border-border/40 bg-card">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-primary/5 pointer-events-none" />
         <div className="absolute -top-16 -left-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative px-8 py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="relative px-4 sm:px-6 md:px-8 py-6 sm:py-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <Link to="/" className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary text-muted-foreground hover:bg-muted hover:text-foreground text-[10px] font-black uppercase tracking-widest transition-colors">
                 <ArrowLeft size={12} />
                 Dashboard
@@ -100,8 +111,8 @@ const Testimonialspage = () => {
               Curate, moderate, and publish client feedback to feature on the main landing pages.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button className="h-11 px-6 rounded-xl font-bold gap-2 shadow-lg shadow-amber-500/20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500 border-0 text-white transition-all">
+          <div className="w-full md:w-auto flex items-center gap-3">
+            <Button className="w-full sm:w-auto h-10 sm:h-11 px-4 sm:px-6 rounded-xl font-bold gap-2 shadow-lg shadow-amber-500/20 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-orange-500 hover:to-amber-500 border-0 text-white transition-all text-xs sm:text-sm">
               <ThumbsUp size={16} /> Add Review Manually
             </Button>
           </div>
@@ -123,15 +134,15 @@ const Testimonialspage = () => {
       {/* Table Card */}
       <div className="dashboard-glass rounded-2xl overflow-hidden border-border/50 shadow-sm">
         {/* Filter bar */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-6 py-5 border-b border-border/40 bg-card/30">
-          <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl w-fit border border-border/50">
-            {["All", "Published", "Pending", "Featured"].map(tab => (
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 px-3 sm:px-6 py-4 sm:py-5 border-b border-border/40 bg-card/30">
+          <div className="grid grid-cols-2 sm:flex items-center gap-1 bg-secondary/50 p-1 rounded-xl w-full sm:w-fit border border-border/50">
+            {FILTER_TABS.map(tab => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === tab ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-center whitespace-nowrap ${activeTab === tab.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -162,10 +173,10 @@ const Testimonialspage = () => {
               const name = review.authorNameOverride || review.author?.name || review.clientName || "Anonymous"
               const avatar = review.authorAvatarOverride || review.author?.profile || review.avatar || `https://i.pravatar.cc/150?u=${review._id}`
               return (
-                <div key={review._id} className="group p-6 hover:bg-secondary/20 transition-colors">
-                  <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                <div key={review._id} className="group p-4 sm:p-6 hover:bg-secondary/20 transition-colors">
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6">
                     {/* Author */}
-                    <div className="flex items-start gap-4 w-60 shrink-0">
+                    <div className="flex items-start gap-3 sm:gap-4 w-full sm:w-60 shrink-0">
                       <img src={avatar} className="h-12 w-12 rounded-xl border border-border/60 object-cover shadow-sm group-hover:border-amber-500/50 transition-colors" alt="" />
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
